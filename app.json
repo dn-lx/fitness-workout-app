@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Fitness Workouts App",
+    "slug": "fitness-workouts-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {},
+    "extra": {
+      "eas": {
+        "projectId": "8f83077a-73e6-4153-b8d1-1714c439c8b3"
+      }
+    }
+  }
+}

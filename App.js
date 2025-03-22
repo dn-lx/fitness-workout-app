@@ -1,23 +1,32 @@
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AppProvider } from './src/context/AppContext';
-import { DataProvider } from './src/context/DataContext';
+import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
 
-// Import the AppNavigator that contains all our navigation structure
+// Import AppNavigator
 import AppNavigator from './src/navigation/AppNavigator';
 
-// Main app component
+// Define custom theme
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#2E7D32',
+    accent: '#00BFA5',
+    background: '#F5F9F6',
+  },
+};
+
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AppProvider>
-        <DataProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </DataProvider>
-      </AppProvider>
-    </SafeAreaProvider>
+    <PaperProvider theme={theme}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <AppNavigator />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </PaperProvider>
   );
 }

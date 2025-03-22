@@ -1,84 +1,86 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, FlatList } from 'react-native';
+import { Text, Searchbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
-// Components
-import WorkoutCard from '../components/WorkoutCard';
+// Import components
+import WorkoutCard from '../components/workout/WorkoutCard';
 
-export default function WorkoutsScreen() {
+// Import models
+import { workouts as workoutsData } from '../models/workout';
+
+// Import styles
+import { workoutsStyles as styles } from '../styles';
+
+const WorkoutsScreen = () => {
+  const [workouts, setWorkouts] = useState(workoutsData);
+  const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
 
-  // Sample data for demo purposes
-  const workouts = [
-    { id: '1', title: 'Full Body Burn', duration: '30 min', level: 'Beginner', category: 'Strength', image: null },
-    { id: '2', title: 'HIIT Challenge', duration: '25 min', level: 'Advanced', category: 'Cardio', image: null },
-    { id: '3', title: 'Yoga Flow', duration: '40 min', level: 'Intermediate', category: 'Flexibility', image: null },
-    { id: '4', title: 'Core Crusher', duration: '20 min', level: 'Beginner', category: 'Strength', image: null },
-    { id: '5', title: 'Cardio Blast', duration: '35 min', level: 'Advanced', category: 'Cardio', image: null },
-    { id: '6', title: 'Stretch & Relax', duration: '30 min', level: 'Beginner', category: 'Flexibility', image: null },
-  ];
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setWorkouts(workoutsData);
+      return;
+    }
+    
+    const filteredWorkouts = workoutsData.filter(workout => 
+      workout.title.toLowerCase().includes(query.toLowerCase()) || 
+      workout.description.toLowerCase().includes(query.toLowerCase()) ||
+      workout.level.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    setWorkouts(filteredWorkouts);
+  };
 
-  const filters = ['All', 'Strength', 'Cardio', 'Flexibility'];
+  const handleSelectWorkout = (id) => {
+    setSelectedWorkout(id);
+    console.log('Selected workout:', id);
+  };
 
-  // Filter workouts based on search query and category filter
-  const filteredWorkouts = workouts.filter(workout => {
-    const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'All' || workout.category === activeFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const handleStartWorkout = (id) => {
+    console.log('Starting workout:', id);
+    // Navigate to workout details/start screen
+  };
+
+  const renderWorkoutCard = ({ item }) => (
+    <WorkoutCard 
+      workout={item}
+      onSelect={handleSelectWorkout}
+      onStart={handleStartWorkout}
+    />
+  );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="px-4 pt-4">
-        <Text className="text-2xl font-bold text-gray-800 mb-4">Workouts</Text>
-        
-        {/* Search bar */}
-        <View className="flex-row items-center bg-gray-100 px-3 py-2 rounded-lg mb-4">
-          <Ionicons name="search" size={20} color="gray" />
-          <TextInput
-            className="flex-1 ml-2 text-gray-800"
-            placeholder="Search workouts"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-        
-        {/* Category filters */}
-        <View className="flex-row mb-4">
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={filters}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => setActiveFilter(item)}
-                className={`px-4 py-2 mr-2 rounded-full ${activeFilter === item ? 'bg-blue-500' : 'bg-gray-200'}`}
-              >
-                <Text className={`font-medium ${activeFilter === item ? 'text-white' : 'text-gray-800'}`}>
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-        
-        {/* Workout list */}
-        <FlatList
-          data={filteredWorkouts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <WorkoutCard workout={item} />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListEmptyComponent={
-            <View className="items-center justify-center py-10">
-              <Text className="text-gray-500 text-lg">No workouts found</Text>
-            </View>
-          }
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Workouts</Text>
+        <Searchbar
+          placeholder="Search workouts"
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
         />
       </View>
+      
+      <FlatList
+        data={workouts}
+        renderItem={renderWorkoutCard}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        initialNumToRender={5}
+      />
+      
+      {workouts.length === 0 && (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No workouts found</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
-}
+};
+
+export default WorkoutsScreen; 

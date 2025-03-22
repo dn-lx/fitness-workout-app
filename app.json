@@ -1,22 +1,46 @@
 {
   "expo": {
-    "name": "Fitness Workouts App",
+    "name": "fitness-workouts-app",
     "slug": "fitness-workouts-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
-    "android": {},
-    "web": {},
-    "extra": {
-      "eas": {
-        "projectId": "8f83077a-73e6-4153-b8d1-1714c439c8b3"
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "We need access to your photos so you can select a profile picture.",
+        "NSCameraUsageDescription": "We need access to your camera so you can take a picture for your profile."
       }
-    }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "We need access to your photos so you can select a profile picture.",
+          "cameraPermission": "We need access to your camera so you can take a picture for your profile."
+        }
+      ]
+    ]
   }
 }

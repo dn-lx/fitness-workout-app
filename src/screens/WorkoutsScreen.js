@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
-import { View, FlatList } from 'react-native';
-import { Text, Searchbar } from 'react-native-paper';
+import { View, FlatList, Alert } from 'react-native';
+import { Text, Searchbar, FAB, Portal, Dialog, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import components
 import WorkoutCard from '../components/workout/WorkoutCard';
 
+// Import user context
+import { useUser } from '../contexts/UserContext';
+
 // Import models
 import { workouts as workoutsData } from '../models/workout';
 
 // Import styles
-import { workoutsStyles as styles } from '../styles';
+import { workoutsStyles as styles, colors } from '../styles';
 
 const WorkoutsScreen = () => {
   const [workouts, setWorkouts] = useState(workoutsData);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
+  const { deleteAllLocalUsers } = useUser();
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -42,6 +47,33 @@ const WorkoutsScreen = () => {
   const handleStartWorkout = (id) => {
     console.log('Starting workout:', id);
     // Navigate to workout details/start screen
+  };
+
+  const handleDeleteLocalUsers = async () => {
+    try {
+      const result = await deleteAllLocalUsers();
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          `Local users deleted successfully. ${result.message}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          `Failed to delete local users: ${result.error || 'Unknown error'}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        `An unexpected error occurred: ${error.message}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setConfirmDialogVisible(false);
+    }
   };
 
   const renderWorkoutCard = ({ item }) => (
@@ -79,6 +111,27 @@ const WorkoutsScreen = () => {
           <Text style={styles.emptyStateText}>No workouts found</Text>
         </View>
       )}
+
+      <FAB
+        style={styles.devButton}
+        small
+        icon="database-remove"
+        color="#fff"
+        onPress={() => setConfirmDialogVisible(true)}
+      />
+
+      <Portal>
+        <Dialog visible={confirmDialogVisible} onDismiss={() => setConfirmDialogVisible(false)}>
+          <Dialog.Title>Delete Local Users</Dialog.Title>
+          <Dialog.Content>
+            <Text>Are you sure you want to delete all users from the local database? This action cannot be undone!</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setConfirmDialogVisible(false)}>Cancel</Button>
+            <Button onPress={handleDeleteLocalUsers} mode="contained" color={colors.error}>Delete Local Users</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 };

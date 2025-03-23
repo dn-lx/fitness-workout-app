@@ -4,17 +4,22 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "web-alt": "npx expo start -c --web --entry-file=web-index.js",
-    "build:android": "expo build:android -t apk",
-    "build:android-app-bundle": "expo build:android -t app-bundle",
-    "build:ios": "expo build:ios",
+    "build:android": "node increment-version.js && expo build:android -t apk",
+    "build:android-app-bundle": "node increment-version.js && expo build:android -t app-bundle",
+    "build:ios": "node increment-version.js && expo build:ios",
+    "build:ios-simulator": "node increment-version.js && expo build:ios -t simulator",
+    "build:ios-archive": "node increment-version.js && expo build:ios -t archive",
     "eject": "expo eject",
     "export": "npx expo export:web",
-    "build:local-apk": "npx expo prebuild --platform android && cd android && ./gradlew assembleDebug",
-    "prepare-apk": "npx expo export"
+    "build:local-apk": "node increment-version.js && npx expo prebuild --platform android && cd android && ./gradlew assembleDebug",
+    "build:local-ios": "node increment-version.js && npx expo prebuild --platform ios && cd ios && xcodebuild -workspace FitnessWorkoutsApp.xcworkspace -scheme FitnessWorkoutsApp -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 14'",
+    "prepare-apk": "npx expo export",
+    "increment-version": "node increment-version.js",
+    "convert-icon": "node scripts/convert-icon.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -24,15 +29,20 @@
     "@react-native-firebase/firestore": "^21.12.1",
     "@react-navigation/bottom-tabs": "^7.3.1",
     "@react-navigation/native": "^7.0.17",
+    "@react-navigation/native-stack": "^7.3.2",
     "@react-navigation/stack": "^7.2.1",
     "@reduxjs/toolkit": "^2.6.1",
     "expo": "~52.0.40",
+    "expo-device": "~7.0.2",
     "expo-file-system": "^18.0.12",
     "expo-image-picker": "~16.0.6",
     "expo-intent-launcher": "^12.0.2",
+    "expo-notifications": "~0.29.14",
+    "expo-splash-screen": "^0.29.22",
     "expo-status-bar": "~2.0.1",
     "firebase": "^11.5.0",
     "formik": "^2.4.6",
+    "jimp": "^1.6.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.7",
@@ -47,7 +57,15 @@
     "yup": "^1.6.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "sharp": "^0.33.5"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    }
+  }
 }

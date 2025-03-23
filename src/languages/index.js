@@ -1,42 +1,62 @@
-// Import all translations
-import en from './en';
-import es from './es';
-import fr from './fr';
-import de from './de';
-import it from './it';
-import ru from './ru';
+// Import translations
+import english from './en';
+import spanish from './es';
+import french from './fr';
+import german from './de';
+import italian from './it';
+import russian from './ru';
+import hindi from './hi';
+import sinhalese from './si';
+import korean from './ko';
+import japanese from './ja';
+import norwegian from './no';
+import bulgarian from './bg';
+import romanian from './ro';
+import finnish from './fi';
 
-// Export translations with language codes
+// Export translations
 export const translations = {
-  en,
-  es,
-  fr,
-  de,
-  it,
-  ru,
+  en: english,
+  es: spanish,
+  fr: french,
+  de: german,
+  it: italian,
+  ru: russian,
+  hi: hindi,
+  si: sinhalese,
+  ko: korean,
+  ja: japanese,
+  no: norwegian,
+  bg: bulgarian,
+  ro: romanian,
+  fi: finnish,
 };
 
-// Export language options for dropdown
+// Export language options
 export const languageOptions = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'it', label: 'Italiano' },
-  { code: 'ru', label: 'Русский' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'hi', label: 'हिन्दी' },
+  { value: 'si', label: 'සිංහල' },
+  { value: 'ko', label: '한국어' },
+  { value: 'ja', label: '日本語' },
+  { value: 'no', label: 'Norsk' },
+  { value: 'bg', label: 'Български' },
+  { value: 'ro', label: 'Română' },
+  { value: 'fi', label: 'Suomi' },
 ];
 
-// Default language
-export const defaultLanguage = 'en';
-
-// Get translation based on language code
-export const getTranslation = (langCode) => {
-  return translations[langCode] || translations[defaultLanguage];
+// Function to get translations based on language code
+export const getTranslations = (languageCode) => {
+  return translations[languageCode] || english; // Default to English if language not found
 };
 
 export default {
   translations,
   languageOptions,
-  defaultLanguage,
-  getTranslation,
+  getTranslations,
 }; 

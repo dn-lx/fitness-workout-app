@@ -1,32 +1,31 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing } from './common';
+import { colors, spacing, typography, shadowStyles } from './common';
 
 const navigationStyles = StyleSheet.create({
   tabBar: {
-    elevation: 4,
+    backgroundColor: colors.cardBackground,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     height: 60,
     paddingBottom: spacing.xsmall,
   },
   tabBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: typography.fontSize.small,
+    fontWeight: typography.fontWeight.regular,
+    textAlign: 'center',
+    margin: 0,
+    padding: 0,
   },
   tabBarIcon: {
     marginTop: spacing.xsmall,
   },
   header: {
-    backgroundColor: colors.background,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    backgroundColor: colors.headerBackground,
   },
   headerTitle: {
-    color: colors.text,
-    fontWeight: 'bold',
+    color: colors.cardBackground,
+    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.large,
   },
   headerLeft: {
     marginLeft: spacing.small,

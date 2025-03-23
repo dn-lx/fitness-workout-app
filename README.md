@@ -102,6 +102,33 @@ To set up Firebase Emulators for local development:
 
 ## Building APK
 
+### App Versioning
+
+The app includes an automatic version increment system:
+
+- The version code/build number automatically increments each time you build using the build scripts
+- For Android: `versionCode` is incremented (an integer value)
+- For iOS: `buildNumber` is incremented (a string value)
+- The version is displayed in the Settings screen, showing both the semantic version (1.0.0) and the build number
+- The automatic increment happens in these build commands:
+  - `npm run build:android` - For Android APK with version increment
+  - `npm run build:android-app-bundle` - For Android App Bundle with version increment
+  - `npm run build:ios` - For iOS build with version increment
+  - `npm run build:ios-simulator` - For iOS simulator build with version increment
+  - `npm run build:ios-archive` - For iOS archive build with version increment
+  - `npm run build:local-apk` - For local Android debug APK with version increment
+  - `npm run build:local-ios` - For local iOS build with version increment
+
+To manually increment the version code without building:
+```
+npm run increment-version
+```
+
+This updates:
+- The `versionCode` in `app.json` under `expo.android`
+- The `buildNumber` in `app.json` under `expo.ios`
+- The `versionCode` in `android/app/build.gradle` (if exists)
+
 ### Using Build Scripts
 
 The project includes scripts to simplify the APK build process:

@@ -13,7 +13,7 @@ export default {
   russian: "Russo",
   
   // Profile setup
-  subtitle: "Configura il tuo profilo fitness per iniziare",
+  subtitle: "Configuriamo il tuo profilo fitness per iniziare",
   addProfilePicture: "Tocca per aggiungere una foto profilo",
   
   // Form fields
@@ -38,8 +38,8 @@ export default {
   // Preferences
   preferences: "Preferenze",
   gender: "Genere",
-  male: "Uomo",
-  female: "Donna",
+  male: "Maschio",
+  female: "Femmina",
   preferNotToSay: "Preferisco non dirlo",
   
   // Fitness level
@@ -47,13 +47,13 @@ export default {
   beginner: "Principiante",
   beginnerDesc: "Nuovo nel fitness",
   intermediate: "Intermedio",
-  intermediateDesc: "Un po' di esperienza",
+  intermediateDesc: "Qualche esperienza",
   advanced: "Avanzato",
   advancedDesc: "Atleta esperto",
   
   // Button & actions
   createProfileButton: "Crea Profilo",
-  termsText: "Creando un profilo, accetti i nostri Termini e la Privacy Policy",
+  termsText: "Creando un profilo, accetti i nostri Termini e la Politica sulla Privacy",
   
   // Photo dialog
   profilePicture: "Foto Profilo",
@@ -71,5 +71,29 @@ export default {
   // Errors
   errorTitle: "Errore",
   photoError: "Impossibile selezionare l'immagine. Riprova.",
-  cameraError: "Impossibile scattare la foto. Riprova."
+  cameraError: "Impossibile scattare la foto. Riprova.",
+  
+  // Notifications
+  notifications: "Notifiche",
+  notificationsDesc: "Ricevi promemoria di allenamento e aggiornamenti",
+  notificationSettings: "Impostazioni Notifiche",
+  notificationSettingsDesc: "Configura le tue preferenze di notifica",
+  workoutReminders: "Promemoria Allenamento",
+  workoutRemindersDesc: "Promemoria giornalieri per completare i tuoi allenamenti",
+  reminderTime: "Orario Promemoria",
+  scheduledFor: "Programmato per",
+  announcements: "Annunci",
+  announcementsDesc: "Rimani aggiornato con notizie e funzionalità dell'app",
+  sendTestNotification: "Invia Notifica di Test",
+  testNotificationTitle: "Notifica di Test",
+  testNotificationBody: "Questa è una notifica di test dall'App Fitness Workout.",
+  notificationPermissionTitle: "Autorizzazione Notifiche",
+  notificationPermissionDesc: "Abbiamo bisogno dell'autorizzazione per inviarti notifiche.",
+  setReminderTime: "Imposta Orario Promemoria",
+  cancel: "Annulla",
+  save: "Salva",
+  
+  // Notification messages
+  workoutReminderTitle: "È ora del tuo allenamento!",
+  workoutReminderBody: "Non dimenticare la tua routine fitness per oggi."
 }; 

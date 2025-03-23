@@ -1,69 +1,84 @@
 import React, { useEffect } from 'react';
-import { StatusBar, LogBox } from 'react-native';
-import { NavigationContainer, DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native';
+import { StatusBar, View, Text, LogBox, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
-import 'react-native-gesture-handler';
+import { NavigationContainer } from '@react-navigation/native';
+import { Provider as ReduxProvider } from 'react-redux';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { useSelector, useDispatch } from 'react-redux';
 
-// Import UserProvider
-import { UserProvider } from './src/contexts/UserContext';
+// Suppress specific warnings
+if (Platform.OS === 'web') {
+  // Suppress useNativeDriver warning on web
+  LogBox.ignoreLogs(['Animated: `useNativeDriver`']);
+  // Suppress shadow style warnings
+  LogBox.ignoreLogs(['"shadow*" style props are deprecated']);
+  // Suppress wheel event listener warning
+  LogBox.ignoreLogs(['Added non-passive event listener to a scroll-blocking']);
+  // Suppress props.pointerEvents warning
+  LogBox.ignoreLogs(['props.pointerEvents is deprecated']);
+}
 
-// Import AppNavigator
+// Import store
+import { store } from './src/store';
+
+// Import navigation
 import AppNavigator from './src/navigation/AppNavigator';
 
-// Define custom theme
-const theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#2E7D32',
-    accent: '#00BFA5',
-    background: '#F5F9F6',
-  },
-};
+// Import theme and context
+import { lightTheme, darkTheme } from './src/styles/theme';
+import { ThemeProvider } from './src/contexts/ThemeContext';
+import { loadTheme } from './src/store/appSlice';
 
-// Define navigation theme to match app theme
-const navigationTheme = {
-  ...NavigationDefaultTheme,
-  colors: {
-    ...NavigationDefaultTheme.colors,
-    primary: theme.colors.primary,
-    background: theme.colors.background,
-    card: theme.colors.surface,
-  },
-};
+// Import user context
+import { UserProvider } from './src/contexts/UserContext';
 
-// Ignore specific warnings to clean up the console
-LogBox.ignoreLogs([
-  'Non-serializable values were found in the navigation state',
-  'VirtualizedLists should never be nested',
-  'Sending `onAnimatedValueUpdate` with no listeners registered'
-]);
+// Import language context
+import { LanguageProvider } from './src/contexts/LanguageContext';
 
-export default function App() {
-  // Log navigation state for debugging
-  const onNavigationStateChange = (state) => {
-    if (__DEV__) {
-      console.log('Navigation State:', JSON.stringify(state, null, 2));
-    }
-  };
-
+// Main app content with theme and navigation setup
+const AppContent = () => {
+  const dispatch = useDispatch();
+  const { theme: themeMode = 'light' } = useSelector(state => state?.app || { theme: 'light' });
+  
+  // Load theme from AsyncStorage on app start
+  useEffect(() => {
+    dispatch(loadTheme());
+  }, [dispatch]);
+  
+  // Determine which theme to use
+  const theme = themeMode === 'dark' ? darkTheme : lightTheme;
+  
+  // Determine the status bar color with fallbacks
+  const statusBarBackgroundColor = themeMode === 'dark' 
+    ? (theme.colors.surface || '#000000') 
+    : (theme.colors.surface || '#F5F5F5');
+  
   return (
-    <PaperProvider theme={theme}>
-      <SafeAreaProvider>
-        <UserProvider>
-          <NavigationContainer
-            theme={navigationTheme}
-            onStateChange={onNavigationStateChange}
-            onReady={() => {
-              console.log('Navigation Container Ready');
-            }}
-          >
-            <StatusBar style="auto" />
-            <AppNavigator />
-          </NavigationContainer>
-        </UserProvider>
-      </SafeAreaProvider>
-    </PaperProvider>
+    <SafeAreaProvider>
+      <ThemeProvider initialTheme={themeMode}>
+        <LanguageProvider>
+          <PaperProvider theme={theme}>
+            <StatusBar 
+              barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'} 
+              backgroundColor={statusBarBackgroundColor}
+            />
+            <NavigationContainer theme={theme}>
+              <UserProvider>
+                <AppNavigator />
+              </UserProvider>
+            </NavigationContainer>
+          </PaperProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
+};
+
+// Main App component with Redux provider
+export default function App() {
+  return (
+    <ReduxProvider store={store}>
+      <AppContent />
+    </ReduxProvider>
   );
 }

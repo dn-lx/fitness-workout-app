@@ -1,94 +1,131 @@
-import { db } from '../config/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, setDoc, query, where } from 'firebase/firestore';
+import { getDB } from '../config/firebase';
+import { collection, doc, setDoc, getDoc, getDocs, addDoc } from 'firebase/firestore';
 
-// Constants for storage locations
+// Storage type constants
 export const STORAGE_TYPE = {
   LOCAL: 'local',
   CLOUD: 'cloud'
 };
 
 /**
- * Save data to either local emulator or cloud Firestore
- * @param {string} collectionName - The collection to save to
- * @param {Object} data - The data to save
- * @param {string} storageType - Either STORAGE_TYPE.LOCAL or STORAGE_TYPE.CLOUD
- * @returns {Promise<string>} Document ID of the saved document
+ * Save a document to Firestore
+ * @param {string} collectionName - Collection name
+ * @param {string} [docId] - Optional document ID (if not provided, one will be generated)
+ * @param {Object} data - Document data
+ * @param {string} [storageType] - Storage type (local or cloud)
+ * @returns {Promise<Object>} Result object with document ID if successful
  */
-export const saveData = async (collectionName, data, storageType = STORAGE_TYPE.CLOUD) => {
+export const saveDocument = async (collectionName, docId, data, storageType = null) => {
   try {
-    // Always include a timestamp
-    const dataWithTimestamp = {
+    // Get the appropriate database
+    const db = getDB(storageType);
+    
+    // Add timestamp
+    const docData = {
       ...data,
-      createdAt: new Date(),
-      storageType: storageType
+      updatedAt: new Date().toISOString()
     };
     
-    const collectionRef = collection(db, collectionName);
-    const docRef = await addDoc(collectionRef, dataWithTimestamp);
-    console.log(`Document saved to ${storageType} with ID: ${docRef.id}`);
-    return docRef.id;
-  } catch (error) {
-    console.error(`Error saving document to ${storageType}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Retrieve data from Firestore
- * @param {string} collectionName - The collection to read from
- * @param {string} storageType - Retrieve only LOCAL or CLOUD data, or null for all data
- * @returns {Promise<Array>} Array of documents
- */
-export const getData = async (collectionName, storageType = null) => {
-  try {
-    const collectionRef = collection(db, collectionName);
+    let docRef;
     
-    let q = collectionRef;
-    if (storageType) {
-      // Filter by storage type if specified
-      q = query(collectionRef, where("storageType", "==", storageType));
+    // If docId is provided, use it
+    if (docId) {
+      docRef = doc(db, collectionName, docId);
+      await setDoc(docRef, docData);
+    } else {
+      // Otherwise let Firestore generate an ID
+      const colRef = collection(db, collectionName);
+      docRef = await addDoc(colRef, docData);
     }
     
-    const querySnapshot = await getDocs(q);
-    const documents = [];
-    
-    querySnapshot.forEach((doc) => {
-      documents.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    console.log(`Retrieved ${documents.length} documents${storageType ? ` from ${storageType}` : ''}`);
-    return documents;
+    return {
+      success: true,
+      docId: docRef.id || docId
+    };
   } catch (error) {
-    console.error(`Error getting documents:`, error);
-    throw error;
+    return {
+      success: false,
+      error: error.message
+    };
   }
 };
 
 /**
- * Get a single document by ID
- * @param {string} collectionName - The collection to read from
- * @param {string} documentId - The document ID
- * @returns {Promise<Object|null>} Document data or null if not found
+ * Get documents from a collection
+ * @param {string} collectionName - Collection name
+ * @param {string} [storageType] - Storage type (local or cloud)
+ * @returns {Promise<Object>} Result object with documents array if successful
  */
-export const getDocumentById = async (collectionName, documentId) => {
+export const getDocuments = async (collectionName, storageType = null) => {
   try {
-    const docRef = doc(db, collectionName, documentId);
+    // Get the appropriate database
+    const db = getDB(storageType);
+    
+    // Get the collection
+    const colRef = collection(db, collectionName);
+    const snapshot = await getDocs(colRef);
+    
+    // Map the documents
+    const documents = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    return {
+      success: true,
+      documents,
+      count: documents.length
+    };
+  } catch (error) {
+    return {
+      success: false,
+      documents: [],
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Get a document by ID
+ * @param {string} collectionName - Collection name
+ * @param {string} docId - Document ID
+ * @param {string} [storageType] - Storage type (local or cloud)
+ * @returns {Promise<Object>} Result object with document data if successful
+ */
+export const getDocument = async (collectionName, docId, storageType = null) => {
+  try {
+    // Get the appropriate database
+    const db = getDB(storageType);
+    
+    // Get the document
+    const docRef = doc(db, collectionName, docId);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
       return {
-        id: docSnap.id,
-        ...docSnap.data()
+        success: true,
+        document: {
+          id: docSnap.id,
+          ...docSnap.data()
+        }
       };
     } else {
-      console.log("No such document!");
-      return null;
+      return {
+        success: false,
+        error: 'Document not found'
+      };
     }
   } catch (error) {
-    console.error("Error getting document:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.message
+    };
   }
+};
+
+export default {
+  saveDocument,
+  getDocuments,
+  getDocument,
+  STORAGE_TYPE
 }; 

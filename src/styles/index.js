@@ -2,7 +2,7 @@
 import commonStyles, { colors, typography, spacing, borderRadius, shadowStyles } from './common';
 import userCreationStyles from './userCreationStyles';
 import workoutsStyles from './workoutsStyles';
-import settingsStyles from './settingsStyles';
+import createSettingsStyles from './settingsStyles';
 import navigationStyles, { tabBarOptions, stackScreenOptions } from './navigationStyles';
 
 export {
@@ -17,7 +17,7 @@ export {
   // Screen specific styles
   userCreationStyles,
   workoutsStyles,
-  settingsStyles,
+  createSettingsStyles,
   
   // Navigation styles
   navigationStyles,
@@ -35,7 +35,7 @@ export default {
   shadowStyles,
   userCreationStyles,
   workoutsStyles,
-  settingsStyles,
+  createSettingsStyles,
   navigationStyles,
   tabBarOptions,
   stackScreenOptions,

@@ -17,6 +17,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# For prebuild workflow with EAS Build
+/android/
+/ios/
+
 # Metro
 .metro-health-check*
 

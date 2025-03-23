@@ -1,27 +1,37 @@
 import { StyleSheet, Dimensions, Platform } from 'react-native';
-import { colors, spacing, typography, borderRadius } from './common';
+import { colors, spacing, typography, borderRadius, shadowStyles } from './common';
 
 const { height } = Dimensions.get('window');
 
 const workoutsStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
-  header: {
+  appbar: {
+    backgroundColor: colors.headerBackground,
+  },
+  appbarTitle: {
+    fontSize: typography.fontSize.large,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.cardBackground,
+    textAlign: 'center',
+  },
+  searchContainer: {
     padding: spacing.medium,
     backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  title: {
-    fontSize: typography.fontSize.xxlarge,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.medium,
-  },
   searchBar: {
-    elevation: 0,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.cardBackground,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.medium,
+  },
+  searchInput: {
+    color: colors.text,
+    fontSize: typography.fontSize.medium,
   },
   list: {
     padding: spacing.medium,
@@ -29,7 +39,7 @@ const workoutsStyles = StyleSheet.create({
   },
   card: {
     marginBottom: spacing.medium,
-    elevation: 2,
+    borderRadius: borderRadius.medium,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -45,7 +55,7 @@ const workoutsStyles = StyleSheet.create({
     marginTop: spacing.small,
   },
   chipText: {
-    color: colors.background,
+    color: colors.cardBackground,
   },
   emptyState: {
     flex: 1,
@@ -62,7 +72,7 @@ const workoutsStyles = StyleSheet.create({
   levelColors: {
     beginner: colors.success,
     intermediate: colors.warning,
-    advanced: colors.danger,
+    advanced: colors.error,
   },
   // Dev button for database operations
   devButton: {
@@ -70,7 +80,7 @@ const workoutsStyles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.danger,
+    backgroundColor: colors.error,
   },
 });
 

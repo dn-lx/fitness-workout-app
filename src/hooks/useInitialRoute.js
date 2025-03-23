@@ -1,71 +1,62 @@
-import { useState, useEffect, useRef } from 'react';
-import firebaseService from '../services/firebaseService';
-import { useUser } from '../contexts/UserContext';
+import { useState, useEffect } from 'react';
+import { anyUsersExist, syncLocalUserToCloud } from '../services/userService';
 
 /**
- * Custom hook to determine the initial route based on whether users exist
- * @returns {Object} Object containing initialRoute and isLoading state
+ * Custom hook to determine the initial route based on user existence
+ * @returns {Object} Object containing the initial route and loading state
  */
-export const useInitialRoute = () => {
+const useInitialRoute = () => {
+  // State for the initial route
   const [initialRoute, setInitialRoute] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { syncLocalUserToCloud } = useUser();
-  const syncAttemptedRef = useRef(false);
-
+  
+  // State for loading status
+  const [loading, setLoading] = useState(true);
+  
+  // State to track sync attempt
+  const [syncAttempted, setSyncAttempted] = useState(false);
+  
+  // Effect to check for existing users and determine the initial route
   useEffect(() => {
-    const checkForExistingUsers = async () => {
+    const checkForUsers = async () => {
       try {
-        console.log('Checking for existing users...');
+        // Check if users exist in the local database
+        const result = await anyUsersExist('local');
         
-        // Use the specialized method to check if any users exist
-        const usersExist = await firebaseService.anyUsersExist();
-        
-        if (usersExist) {
-          console.log('Existing users found, setting route to MainTabs');
+        if (result.exists) {
+          // Users exist, go to main tabs
           setInitialRoute('MainTabs');
           
-          // Only attempt to sync once to prevent loops
-          if (!syncAttemptedRef.current) {
-            syncAttemptedRef.current = true;
-            
-            // Attempt sync in background, don't wait for completion
-            syncLocalUserToCloud()
-              .then(result => {
-                if (result.success) {
-                  console.log('User synced to cloud successfully');
-                } else if (result.alreadyAttempted) {
-                  console.log('Sync was already attempted, continuing');
-                } else {
-                  console.warn('Sync failed, continuing anyway:', result.error);
-                }
-              })
-              .catch(error => {
-                console.error('Error during sync:', error);
-              });
-            
-            // End loading state after a short delay regardless of sync
-            setTimeout(() => setIsLoading(false), 1000);
-          } else {
-            setIsLoading(false);
+          // Try to sync user to cloud if not already attempted
+          if (!syncAttempted) {
+            setSyncAttempted(true);
+            try {
+              // Try to sync the user to cloud Firestore
+              const syncResult = await syncLocalUserToCloud();
+              
+              if (!syncResult.success && syncResult.error !== 'User already exists in cloud') {
+                // Non-critical error, we can still proceed
+              }
+            } catch (error) {
+              // Silent error handling - sync failure isn't critical
+            }
           }
         } else {
-          console.log('No users found, setting route to UserCreation');
+          // No users, go to user creation screen
           setInitialRoute('UserCreation');
-          setIsLoading(false);
         }
       } catch (error) {
-        console.error('Error checking for users:', error);
-        // Default to UserCreation on error
+        // On error, default to user creation screen
         setInitialRoute('UserCreation');
-        setIsLoading(false);
+      } finally {
+        // Set loading to false when done
+        setLoading(false);
       }
     };
+    
+    checkForUsers();
+  }, [syncAttempted]);
+  
+  return { initialRoute, loading };
+};
 
-    checkForExistingUsers();
-  }, [syncLocalUserToCloud]);
-
-  return { 
-    initialRoute: initialRoute || 'UserCreation', // Default to UserCreation if null
-    isLoading 
-  };
-}; 
+export default useInitialRoute; 

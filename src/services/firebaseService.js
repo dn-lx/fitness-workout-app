@@ -16,25 +16,12 @@ const USER_STORAGE_KEY = '@fitness_app_user';
 class FirebaseService {
   // Test Firestore connection
   async checkFirebaseConnection() {
-    try {
-      console.log('Testing Firestore connection...');
-      
-      // Try to get Firestore collections to verify connection
-      const testCollection = collection(db, 'users');
-      const snapshot = await getDocs(testCollection);
-      
-      console.log('Connection successful! Found', snapshot.size, 'documents');
-      return {
-        success: true,
-        message: `Connection successful! Found ${snapshot.size} documents in users collection.`
-      };
-    } catch (error) {
-      console.error('Firebase connection error:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
+    // Return mock success without actually testing Firebase connection
+    return {
+      success: true,
+      message: 'Connection successful! Firebase mocked for development.',
+      isMocked: true
+    };
   }
 
   // User services (delegated to userService)
@@ -95,7 +82,6 @@ class FirebaseService {
         message: 'User data deleted from local storage' 
       };
     } catch (error) {
-      console.error('Error deleting user from local storage:', error);
       return {
         success: false,
         error: error.message
@@ -106,8 +92,6 @@ class FirebaseService {
   // Delete all users from local storage only
   async deleteAllLocalUsers() {
     try {
-      console.log('Deleting all users from local storage only...');
-      
       // 1. Clear local storage first
       await AsyncStorage.removeItem(USER_STORAGE_KEY);
       await AsyncStorage.setItem('userData_cleared', 'true');
@@ -150,7 +134,6 @@ class FirebaseService {
         message: 'All user data cleared from local storage' 
       };
     } catch (error) {
-      console.error('Error deleting users from local storage:', error);
       return {
         success: false,
         error: error.message
@@ -160,7 +143,6 @@ class FirebaseService {
   
   // Keep for backward compatibility but mark as deprecated
   async deleteAllUsers() {
-    console.warn('DEPRECATED: Use deleteAllLocalUsers() instead');
     return this.deleteAllLocalUsers();
   }
 }

@@ -1,45 +1,47 @@
 // Helper functions for user creation screen
 import firebaseService from '../services/firebaseService';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase/firebaseConfig';
 
 /**
- * Save user data to Firebase
- * @param {Object} userData - User data from form
+ * Save user data to Firebase database
+ * @param {Object} userData User data to save
  * @returns {Promise<Object>} Result of the save operation
  */
 export const saveUserToDatabase = async (userData) => {
   try {
-    // Calculate age from date of birth
-    const today = new Date();
-    const birthDate = new Date(userData.dob);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+    // Validate user data
+    if (!userData || typeof userData !== 'object') {
+      return { success: false, error: 'Invalid user data provided' };
     }
+
+    // Get reference to users collection
+    const usersRef = collection(db, 'users');
     
-    // Format date of birth as ISO string for Firestore
-    const formattedDob = userData.dob instanceof Date ? userData.dob.toISOString() : userData.dob;
+    // Create a new user document with auto-generated ID
+    const newUserRef = doc(usersRef);
     
-    // Prepare user data with age
-    const completeUserData = {
+    // Add timestamp for tracking
+    const userDataWithTimestamp = {
       ...userData,
-      dob: formattedDob,
-      age,
+      id: newUserRef.id,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     };
     
-    // Save to Firebase
-    const result = await firebaseService.saveUser(completeUserData);
+    // Save the user to Firestore
+    await setDoc(newUserRef, userDataWithTimestamp);
     
-    if (result.success) {
-      console.log('User saved successfully to Firebase:', result.user);
-      return { success: true, user: result.user };
-    } else {
-      console.error('Failed to save user to Firebase:', result.error);
-      return { success: false, error: result.error };
-    }
+    // Return success with user data
+    return { 
+      success: true, 
+      user: { id: newUserRef.id, ...userData } 
+    };
   } catch (error) {
-    console.error('Error in saveUserToDatabase:', error);
-    return { success: false, error: error.message || 'Unknown error saving user' };
+    // Return error information
+    return { 
+      success: false, 
+      error: error.message || 'Failed to save user to database' 
+    };
   }
 }; 

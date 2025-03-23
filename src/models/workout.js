@@ -142,4 +142,52 @@ export const sampleWorkouts = [
 ];
 
 // Convert sample data to Workout objects
-export const workouts = sampleWorkouts.map(workout => Workout.fromData(workout)); 
+export const workouts = sampleWorkouts.map(workout => Workout.fromData(workout));
+
+// Function to add a new workout
+export const addWorkout = (newWorkout) => {
+  // Generate a new ID (simple implementation)
+  const newId = (Math.max(...workouts.map(w => parseInt(w.id))) + 1).toString();
+  
+  // Create a new workout object with the generated ID
+  const workoutToAdd = {
+    ...newWorkout,
+    id: newId
+  };
+  
+  // Add to the workouts array
+  workouts.push(Workout.fromData(workoutToAdd));
+  
+  return newId;
+};
+
+// Function to update an existing workout
+export const updateWorkout = (updatedWorkout) => {
+  const index = workouts.findIndex(w => w.id === updatedWorkout.id);
+  
+  if (index !== -1) {
+    // Replace the workout at the found index
+    workouts[index] = Workout.fromData(updatedWorkout);
+    return true;
+  }
+  
+  return false;
+};
+
+// Function to remove a workout
+export const removeWorkout = (id) => {
+  const index = workouts.findIndex(w => w.id === id);
+  
+  if (index !== -1) {
+    // Remove the workout at the found index
+    workouts.splice(index, 1);
+    return true;
+  }
+  
+  return false;
+};
+
+// Function to get a workout by id
+export const getWorkoutById = (id) => {
+  return workouts.find(w => w.id === id) || null;
+}; 

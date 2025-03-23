@@ -1,7 +1,7 @@
 // German translations
 export default {
   // Header
-  createProfile: "Profil Erstellen",
+  createProfile: "Erstellen Sie Ihr Profil",
   
   // Language selector
   language: "Sprache",
@@ -13,8 +13,8 @@ export default {
   russian: "Russisch",
   
   // Profile setup
-  subtitle: "Lass uns dein Fitness-Profil einrichten",
-  addProfilePicture: "Tippe, um ein Profilbild hinzuzufügen",
+  subtitle: "Lassen Sie uns Ihr Fitness-Profil einrichten, um zu beginnen",
+  addProfilePicture: "Tippen Sie, um ein Profilbild hinzuzufügen",
   
   // Form fields
   personalInformation: "Persönliche Informationen",
@@ -28,11 +28,11 @@ export default {
   // Form validation
   nameRequired: "Name ist erforderlich",
   emailRequired: "E-Mail ist erforderlich",
-  validEmail: "Bitte gib eine gültige E-Mail ein",
+  validEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein",
   weightRequired: "Gewicht ist erforderlich",
-  validWeight: "Bitte gib ein gültiges Gewicht ein",
+  validWeight: "Bitte geben Sie ein gültiges Gewicht ein",
   heightRequired: "Größe ist erforderlich",
-  validHeight: "Bitte gib eine gültige Größe ein",
+  validHeight: "Bitte geben Sie eine gültige Größe ein",
   dobRequired: "Geburtsdatum ist erforderlich",
   
   // Preferences
@@ -40,36 +40,65 @@ export default {
   gender: "Geschlecht",
   male: "Männlich",
   female: "Weiblich",
-  preferNotToSay: "Keine Angabe",
+  preferNotToSay: "Möchte ich nicht sagen",
   
   // Fitness level
   fitnessLevel: "Fitness-Level",
   beginner: "Anfänger",
-  beginnerDesc: "Neu im Fitness",
+  beginnerDesc: "Neu im Fitnessbereich",
   intermediate: "Fortgeschritten",
-  intermediateDesc: "Etwas Erfahrung",
+  intermediateDesc: "Einige Erfahrung",
   advanced: "Profi",
   advancedDesc: "Erfahrener Athlet",
   
   // Button & actions
-  createProfileButton: "Profil Erstellen",
-  termsText: "Durch die Erstellung eines Profils stimmst du unseren Nutzungsbedingungen und Datenschutzrichtlinien zu",
+  createProfileButton: "Profil erstellen",
+  termsText: "Durch die Erstellung eines Profils stimmen Sie unseren Nutzungsbedingungen & Datenschutzbestimmungen zu",
   
   // Photo dialog
   profilePicture: "Profilbild",
-  choosePhoto: "Wähle, wie du ein Profilbild hinzufügen möchtest",
-  takePhoto: "Foto Aufnehmen",
-  chooseFromGallery: "Aus Galerie Wählen",
-  removePhoto: "Foto Entfernen",
+  choosePhoto: "Wählen Sie, wie Sie ein Profilbild hinzufügen möchten",
+  takePhoto: "Foto aufnehmen",
+  chooseFromGallery: "Aus Galerie auswählen",
+  removePhoto: "Foto entfernen",
   
   // Permissions
-  permissionRequired: "Berechtigung Erforderlich",
-  cameraPermission: "Wir benötigen Zugriff auf deine Kamera, um ein Profilbild aufzunehmen.",
-  galleryPermission: "Wir benötigen Zugriff auf deine Fotos, um ein Profilbild festzulegen.",
+  permissionRequired: "Berechtigung erforderlich",
+  cameraPermission: "Wir benötigen Zugriff auf Ihre Kamera, um ein Profilbild aufzunehmen.",
+  galleryPermission: "Wir benötigen Zugriff auf Ihre Fotos, um ein Profilbild festzulegen.",
   ok: "OK",
   
   // Errors
   errorTitle: "Fehler",
-  photoError: "Fehler beim Auswählen des Bildes. Bitte versuche es erneut.",
-  cameraError: "Fehler beim Aufnehmen des Fotos. Bitte versuche es erneut."
+  photoError: "Bild konnte nicht ausgewählt werden. Bitte versuchen Sie es erneut.",
+  cameraError: "Foto konnte nicht aufgenommen werden. Bitte versuchen Sie es erneut.",
+  
+  // Notifications
+  notifications: "Benachrichtigungen",
+  notificationsDesc: "Erhalten Sie Trainings-Erinnerungen und Updates",
+  notificationSettings: "Benachrichtigungseinstellungen",
+  notificationSettingsDesc: "Konfigurieren Sie Ihre Benachrichtigungspräferenzen",
+  workoutReminders: "Trainings-Erinnerungen",
+  workoutRemindersDesc: "Tägliche Erinnerungen, um Ihre Trainingseinheiten zu absolvieren",
+  reminderTime: "Erinnerungszeit",
+  scheduledFor: "Geplant für",
+  announcements: "Ankündigungen",
+  announcementsDesc: "Bleiben Sie über App-Neuigkeiten und -Funktionen informiert",
+  sendTestNotification: "Test-Benachrichtigung senden",
+  testNotificationTitle: "Test-Benachrichtigung",
+  testNotificationBody: "Dies ist eine Test-Benachrichtigung der Fitness Workout App.",
+  notificationPermissionTitle: "Benachrichtigungsberechtigung",
+  notificationPermissionDesc: "Wir benötigen die Erlaubnis, Ihnen Benachrichtigungen zu senden.",
+  setReminderTime: "Erinnerungszeit festlegen",
+  cancel: "Abbrechen",
+  save: "Speichern",
+  
+  // Notification messages
+  workoutReminderTitle: "Zeit für Ihr Training!",
+  workoutReminderBody: "Vergessen Sie nicht Ihre Fitness-Routine für heute.",
+  
+  // Misc
+  chooseUnits: "Wählen Sie Ihre bevorzugten Maßeinheiten für Gewicht, Größe und Entfernung.",
+  configureNotifications: "Konfigurieren Sie, wie und wann Sie Benachrichtigungen von der App erhalten.",
+  changePhoto: "Foto ändern"
 }; 

@@ -4,12 +4,13 @@ const { width, height } = Dimensions.get('window');
 
 // Modern color palette
 export const colors = {
+  // Light theme colors
   primary: '#2B87D1',      // Strong Blue - energy, focus, performance
   primaryLight: '#5AA6E0', // Light Blue - freshness, movement
   primaryDark: '#1A5C94',  // Dark Blue - strength, reliability
-  accent: '#FF5722',       // Vibrant Orange - energy, power, dynamism
-  accentLight: '#FF8A65',  // Light Orange - vitality, action
-  accentDark: '#E64A19',   // Dark Orange - intensity, drive
+  accent: '#E67E22',       // Softer Orange - eye-friendly, warm, inviting
+  accentLight: '#F39C12',  // Light Orange - gentle, approachable
+  accentDark: '#D35400',   // Dark Orange - confidence, impact
   secondary: '#00BCD4',    // Cyan - refreshment, hydration
   secondaryDark: '#0097A7', // Dark Cyan - deepness, focus
   background: '#F5F5F5',   // Light Gray - clean, minimal
@@ -28,6 +29,40 @@ export const colors = {
   darkOverlay: 'rgba(0,0,0,0.5)',
   lightOverlay: 'rgba(255,255,255,0.5)',
   cardShadow: '#d0d0d0',
+  
+  // Dark theme colors
+  backgroundDark: '#121212',   // Very dark gray (almost black)
+  cardBackgroundDark: '#1E1E1E', // Dark gray (slightly lighter than background)
+  headerBackgroundDark: '#1A5C94', // Dark Blue
+  surfaceDark: '#2C2C2C',       // Dark gray for cards and surfaces
+  textDark: '#FFFFFF',          // White text
+  textLightDark: '#BBBBBB',     // Light gray text
+  textMutedDark: '#888888',     // Medium gray (muted text)
+  borderDark: '#444444',        // Dark gray for borders
+  dividerDark: '#333333',       // Slightly lighter than background
+  disabledDark: '#333333',      // Dark gray for disabled elements
+  cardShadowDark: '#000000',    // Black shadow for dark mode
+  
+  // These stay consistent between light and dark modes
+  notification: '#FF5722',      // Orange notification color
+  statusBarDark: '#000000',     // Status bar color for dark mode
+  statusBarLight: '#F5F5F5',    // Status bar color for light mode
+  
+  // Shadow styles for light theme
+  shadowLight1: 'rgba(0, 0, 0, 0.05)',
+  shadowLight2: 'rgba(0, 0, 0, 0.08)',
+  shadowLight3: 'rgba(0, 0, 0, 0.11)',
+  shadowLight4: 'rgba(0, 0, 0, 0.14)',
+  shadowLight5: 'rgba(0, 0, 0, 0.17)',
+  
+  // Light theme variants for dark mode
+  primaryLight: '#5BABEC',
+  accentLight: '#4CD2E6',
+  secondaryLight: '#FFA726',
+  errorLight: '#FF8A80',
+  notificationLight: '#B3FFC9',
+  backdropDark: 'rgba(0, 0, 0, 0.5)',
+  surfaceDisabledDark: 'rgba(30, 30, 30, 0.38)',
 };
 
 // Typography scales
@@ -110,34 +145,34 @@ export const borderRadius = {
 
 // Modern shadows
 export const shadowStyles = {
-  small: {
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 2,
-  },
-  medium: {
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4,
-  },
-  large: {
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-  extraLarge: {
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.44,
-    shadowRadius: 10.32,
-    elevation: 16,
-  },
+  small: Platform.select({
+    ios: {},
+    android: {
+      elevation: 0,
+    },
+    web: {},
+  }),
+  medium: Platform.select({
+    ios: {},
+    android: {
+      elevation: 0,
+    },
+    web: {},
+  }),
+  large: Platform.select({
+    ios: {},
+    android: {
+      elevation: 0,
+    },
+    web: {},
+  }),
+  extraLarge: Platform.select({
+    ios: {},
+    android: {
+      elevation: 0,
+    },
+    web: {},
+  }),
 };
 
 // Layout helpers
@@ -197,14 +232,18 @@ export const cardStyles = {
     padding: spacing.medium,
     backgroundColor: colors.surface,
     marginBottom: spacing.medium,
-    ...shadowStyles.small,
+    ...(Platform.OS === 'web' 
+      ? {} 
+      : shadowStyles.small),
   },
   elevated: {
     borderRadius: borderRadius.medium,
     padding: spacing.medium,
     backgroundColor: colors.surface,
     marginBottom: spacing.medium,
-    ...shadowStyles.medium,
+    ...(Platform.OS === 'web' 
+      ? {} 
+      : shadowStyles.medium),
   },
   flat: {
     borderRadius: borderRadius.medium,
@@ -303,7 +342,9 @@ const commonStyles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.surface,
-    ...shadowStyles.small,
+    ...(Platform.OS === 'web' 
+      ? {} 
+      : shadowStyles.small),
   },
   card: cardStyles.standard,
   cardElevated: cardStyles.elevated,
@@ -323,6 +364,64 @@ const commonStyles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: borderRadius.circle,
+  },
+  // List and Settings styles
+  listItem: {
+    borderRadius: borderRadius.small,
+    marginVertical: spacing.xsmall,
+    paddingVertical: spacing.small,
+  },
+  listItemIcon: {
+    marginRight: spacing.small,
+  },
+  listDivider: {
+    height: 1,
+    marginVertical: spacing.xsmall,
+  },
+  sectionHeader: {
+    paddingVertical: spacing.small,
+    paddingHorizontal: spacing.medium,
+    fontSize: typography.fontSize.medium,
+    fontWeight: typography.fontWeight.bold,
+  },
+  // Dialog styles
+  dialog: {
+    borderRadius: borderRadius.large,
+    padding: spacing.medium,
+    maxWidth: 480,
+    width: '90%',
+    alignSelf: 'center',
+  },
+  dialogTitle: {
+    fontSize: typography.fontSize.large,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.medium,
+  },
+  dialogContent: {
+    marginBottom: spacing.medium,
+  },
+  dialogActions: {
+    marginTop: spacing.medium,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  dialogScrollContent: {
+    maxHeight: height * 0.6,
+  },
+  dialogInput: {
+    marginBottom: spacing.medium,
+  },
+  dialogLabel: {
+    fontSize: typography.fontSize.medium,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: spacing.small,
+  },
+  dialogDescription: {
+    fontSize: typography.fontSize.medium,
+    marginBottom: spacing.medium,
+  },
+  textSpacing: {
+    marginVertical: spacing.small,
   },
 });
 

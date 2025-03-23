@@ -17,6 +17,12 @@ import { db, storage } from '../config/firebase';
 // Collection reference
 const WORKOUTS_COLLECTION = 'workouts';
 
+// Replace with a simple ID generator function
+const generateId = () => {
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
+};
+
 /**
  * Workout Service - Handles all workout-related functionality
  */
@@ -29,26 +35,24 @@ class WorkoutService {
    */
   async uploadWorkoutImage(uri) {
     try {
-      // Generate a unique filename using timestamp
-      const filename = `workout_${Date.now()}.jpg`;
-      
-      // Create a reference to the image path in storage
-      const storageReference = storageRef(storage, `workout-images/${filename}`);
-      
-      // Fetch the image from the URI
+      if (!uri) return null;
+
+      // Convert uri to blob
       const response = await fetch(uri);
       const blob = await response.blob();
       
-      // Upload the image
-      await uploadBytesResumable(storageReference, blob);
+      // Generate a unique filename
+      const filename = `workouts/${generateId()}.jpg`;
+      const reference = storageRef(storage, filename);
+      
+      // Upload the blob
+      await uploadBytesResumable(reference, blob);
       
       // Get the download URL
-      const downloadURL = await getDownloadURL(storageReference);
-      
-      return downloadURL;
+      return await getDownloadURL(reference);
     } catch (error) {
       console.error('Error uploading workout image:', error);
-      return null;
+      throw error;
     }
   }
 
@@ -61,8 +65,9 @@ class WorkoutService {
    */
   async saveWorkout(workoutData, workoutImage = null) {
     try {
-      // Generate a unique ID for the workout
-      const workoutId = `workout_${Date.now()}`;
+      if (!workoutData || !workoutData.userId) {
+        return { success: false, error: 'Missing required data' };
+      }
       
       // Upload workout image if provided
       let imageURL = null;
@@ -70,7 +75,7 @@ class WorkoutService {
         imageURL = await this.uploadWorkoutImage(workoutImage);
       }
       
-      // Add image URL and timestamps to workout data
+      // Prepare workout data
       const workoutWithMetadata = {
         ...workoutData,
         imageURL,
@@ -78,13 +83,17 @@ class WorkoutService {
         updatedAt: serverTimestamp()
       };
       
+      // Delete local image URI as it's not needed in the database
+      delete workoutWithMetadata.imageUri;
+      
       // Save workout to Firestore
-      await setDoc(doc(db, WORKOUTS_COLLECTION, workoutId), workoutWithMetadata);
+      const workoutsRef = collection(db, WORKOUTS_COLLECTION);
+      const docRef = await setDoc(doc(workoutsRef, workoutData.id), workoutWithMetadata);
       
       return {
         success: true,
         workout: {
-          id: workoutId,
+          id: workoutData.id,
           ...workoutData,
           imageURL,
           createdAt: new Date(),
@@ -92,10 +101,9 @@ class WorkoutService {
         }
       };
     } catch (error) {
-      console.error('Error saving workout:', error);
-      return {
-        success: false,
-        error: error.message
+      return { 
+        success: false, 
+        error: error.message || 'Failed to save workout' 
       };
     }
   }
@@ -134,10 +142,9 @@ class WorkoutService {
         workouts
       };
     } catch (error) {
-      console.error('Error getting user workouts:', error);
-      return {
-        success: false,
-        error: error.message
+      return { 
+        success: false, 
+        error: error.message || 'Failed to get workouts' 
       };
     }
   }

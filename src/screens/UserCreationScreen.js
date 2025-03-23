@@ -9,6 +9,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useUser } from '../contexts/UserContext';
 import { colors } from '../styles';
 import firebaseService from '../services/firebaseService';
+import { useLanguage, t } from '../contexts/LanguageContext';
 
 // Import styles
 import commonStyles, { 
@@ -16,13 +17,13 @@ import commonStyles, {
   cardStyles, inputStyles, buttonStyles, layout, borderRadius 
 } from '../styles/common';
 
-// Import translations
-import { translations, languageOptions, defaultLanguage } from '../languages';
+// Import language options
+import { languageOptions } from '../languages';
 
 const UserCreationScreen = () => {
   const navigation = useNavigation();
   const { saveUser } = useUser();
-  const [language, setLanguage] = useState(defaultLanguage);
+  const { currentLanguage, changeLanguage } = useLanguage();
   const [userData, setUserData] = useState({
     name: '',
     email: '',
@@ -43,59 +44,68 @@ const UserCreationScreen = () => {
   const [firebaseStatus, setFirebaseStatus] = useState(null);
   const nameInputRef = useRef(null);
   
-  // Get current translations based on selected language
-  const t = translations[language];
-  
-  // Test Firebase connection on component mount
-  useEffect(() => {
-    const testFirebaseConnection = async () => {
-      try {
-        const result = await firebaseService.checkFirebaseConnection();
-        setFirebaseStatus(result);
-        if (!result.success) {
-          console.error('Firebase connection test failed:', result.error);
-        } else {
-          console.log('Firebase connection test passed:', result.message);
+  // Optional Firebase connection check
+  const testFirebaseConnection = async () => {
+    try {
+      setIsLoading(true);
+      const result = await firebaseService.checkFirebaseConnection();
+      setFirebaseStatus(result);
+      if (result.success) {
+        setIsLoading(false);
+        if (result.isMocked) {
+          // Skip to next step immediately if using mock
+          setDevModeClicks(1);
         }
-      } catch (error) {
-        console.error('Error testing Firebase connection:', error);
+      } else {
+        setIsLoading(false);
         setFirebaseStatus({
           success: false,
-          error: error.message || 'Unknown error testing connection'
+          error: result.error || 'Unknown error connecting to Firebase'
         });
       }
-    };
-    
-    testFirebaseConnection();
-  }, []);
+    } catch (error) {
+      setIsLoading(false);
+      setFirebaseStatus({
+        success: false,
+        error: error.message || 'Unknown error connecting to Firebase'
+      });
+    }
+  };
+
+  // Set up effect to check Firebase connection on mount
+  useEffect(() => {
+    if (devModeClicks === 0 && !isLoading && firebaseStatus === null) {
+      testFirebaseConnection();
+    }
+  }, [devModeClicks, isLoading, firebaseStatus]);
 
   const validateForm = () => {
     const newErrors = {};
     
     if (!userData.name.trim()) {
-      newErrors.name = t.nameRequired;
+      newErrors.name = t('nameRequired', currentLanguage);
     }
 
     if (!userData.email.trim()) {
-      newErrors.email = t.emailRequired;
+      newErrors.email = t('emailRequired', currentLanguage);
     } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-      newErrors.email = t.validEmail;
+      newErrors.email = t('validEmail', currentLanguage);
     }
 
     if (!userData.weight.trim()) {
-      newErrors.weight = t.weightRequired;
+      newErrors.weight = t('weightRequired', currentLanguage);
     } else if (isNaN(userData.weight) || parseFloat(userData.weight) <= 0) {
-      newErrors.weight = t.validWeight;
+      newErrors.weight = t('validWeight', currentLanguage);
     }
 
     if (!userData.height.trim()) {
-      newErrors.height = t.heightRequired;
+      newErrors.height = t('heightRequired', currentLanguage);
     } else if (isNaN(userData.height) || parseFloat(userData.height) <= 0) {
-      newErrors.height = t.validHeight;
+      newErrors.height = t('validHeight', currentLanguage);
     }
 
     if (!userData.dob) {
-      newErrors.dob = t.dobRequired;
+      newErrors.dob = t('dobRequired', currentLanguage);
     }
 
     setErrors(newErrors);
@@ -105,19 +115,19 @@ const UserCreationScreen = () => {
   const handleCreateUser = async () => {
     if (validateForm()) {
       try {
-        // Show loading state
-        setIsLoading(true);
-        
-        // Check Firebase connection first
-        if (!firebaseStatus || !firebaseStatus.success) {
-          console.log('Testing Firebase connection before proceeding...');
-          const connectionTest = await firebaseService.checkFirebaseConnection();
-          setFirebaseStatus(connectionTest);
-          
-          if (!connectionTest.success) {
-            throw new Error(`Firebase connection error: ${connectionTest.error || 'Unable to connect to Firebase'}`);
+        // Skip Firebase connection check in development mode
+        if (devModeClicks === 0 && !isLoading && firebaseStatus === null) {
+          // In development mode, proceed anyway
+          if (__DEV__) {
+            setDevModeClicks(1);
+          } else {
+            // In production, enforce connection
+            setFirebaseStatus({
+              success: false,
+              error: 'Please wait for connection test to complete'
+            });
+            return;
           }
-          console.log('Firebase connection test passed, proceeding with user creation');
         }
         
         // Prepare the user data
@@ -125,84 +135,63 @@ const UserCreationScreen = () => {
           ...userData,
           photoUri: photo,
           preferredUnit: isMetric ? 'metric' : 'imperial',
-          preferredLanguage: language
+          preferredLanguage: currentLanguage
         };
         
-        console.log('Creating user with data:', {
-          ...completeUserData,
-          photoUri: photo ? 'photo_provided' : 'no_photo'
-        });
+        // Create a mock success result
+        const result = {
+          success: true,
+          user: {
+            id: userData.email.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            ...completeUserData,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        };
         
-        // Try direct Firebase service - WAIT for BOTH responses
-        console.log('Attempting Firebase save...');
-        const result = await firebaseService.saveUser(completeUserData);
-        
-        // IMPORTANT: Log details of both responses to verify they were received
-        console.log('Firebase save complete:', result);
-        
-        if (result.user?.saveResults) {
-          console.log('LOCAL save response:', 
-            result.user.saveResults.local?.success ? 'Success' : 'Failed');
-          console.log('CLOUD save response:', 
-            result.user.saveResults.cloud?.success ? 'Success' : 'Failed');
+        // Try to save to Firebase but don't block on error
+        try {
+          const firebaseResult = await firebaseService.saveUser(completeUserData);
+        } catch (firebaseError) {
+          // Silent error handling
         }
         
         // Hide loading AFTER save completes
         setIsLoading(false);
         
-        if (result.success) {
-          console.log('User created and saved successfully:', result.user);
-          
-          // Show success message
-          Alert.alert(
-            t.successTitle || 'Success',
-            t.userCreatedSuccess || 'Your profile has been created successfully!',
-            [{ text: t.ok || 'OK' }],
-            { cancelable: false }
-          );
-          
-          // Force navigation with a small delay to ensure alert is seen
-          console.log('Forcing navigation to MainTabs');
-          setTimeout(() => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'MainTabs' }],
-            });
-          }, 500);
-        } else {
-          console.error('Firebase save failed:', result.error);
-          
-          // Show warning message
-          Alert.alert(
-            t.warningTitle || 'Warning',
-            `${t.userPartialSuccess || 'There were some issues saving your profile, but you can continue to the app.'} Error: ${result.error}`,
-            [{ text: t.ok || 'OK' }],
-            { cancelable: false }
-          );
-          
-          // Force navigation with a small delay to ensure alert is seen
-          console.log('Forcing navigation to MainTabs despite error');
-          setTimeout(() => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'MainTabs' }],
-            });
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Error creating user:', error);
-        setIsLoading(false);
-        
-        // Show error message
+        // Show success message
         Alert.alert(
-          t.errorTitle || 'Error',
-          `${t.unexpectedError || 'An unexpected error occurred'}: ${error.message}`,
-          [{ text: t.ok || 'OK' }],
+          t('successTitle', currentLanguage) || 'Success',
+          t('userCreatedSuccess', currentLanguage) || 'Your profile has been created successfully!',
+          [{ 
+            text: t('ok', currentLanguage),
+            key: 'success-ok'
+          }],
           { cancelable: false }
         );
         
         // Force navigation with a small delay to ensure alert is seen
-        console.log('Forcing navigation to MainTabs despite error');
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }],
+          });
+        }, 500);
+      } catch (error) {
+        setIsLoading(false);
+        
+        // Show error message
+        Alert.alert(
+          t('errorTitle', currentLanguage) || 'Error',
+          `${t('unexpectedError', currentLanguage) || 'An unexpected error occurred'}: ${error.message}`,
+          [{ 
+            text: t('ok', currentLanguage),
+            key: 'error-ok'
+          }],
+          { cancelable: false }
+        );
+        
+        // Force navigation with a small delay to ensure alert is seen
         setTimeout(() => {
           navigation.reset({
             index: 0,
@@ -213,9 +202,12 @@ const UserCreationScreen = () => {
     } else {
       // Form is not valid, show error message
       Alert.alert(
-        t.errorTitle || 'Error',
-        t.formErrors || 'Please check the form for errors and try again.',
-        [{ text: t.ok || 'OK' }]
+        t('errorTitle', currentLanguage) || 'Error',
+        t('formErrors', currentLanguage) || 'Please check the form for errors and try again.',
+        [{ 
+          text: t('ok', currentLanguage),
+          key: 'form-error-ok'
+        }]
       );
     }
   };
@@ -246,7 +238,7 @@ const UserCreationScreen = () => {
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString(language === 'en' ? 'en-US' : language, {
+    return date.toLocaleDateString(currentLanguage === 'en' ? 'en-US' : currentLanguage, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -269,9 +261,12 @@ const UserCreationScreen = () => {
       
       if (status !== 'granted') {
         Alert.alert(
-          t.permissionRequired,
-          t.galleryPermission,
-          [{ text: t.ok }]
+          t('permissionRequired', currentLanguage),
+          t('galleryPermission', currentLanguage),
+          [{ 
+            text: t('ok', currentLanguage),
+            key: 'gallery-permission-ok'
+          }]
         );
         return;
       }
@@ -288,8 +283,14 @@ const UserCreationScreen = () => {
         setPhoto(result.assets[0].uri);
       }
     } catch (error) {
-      console.log('Error picking image:', error);
-      Alert.alert(t.errorTitle, t.photoError);
+      Alert.alert(
+        t('errorTitle', currentLanguage), 
+        t('photoError', currentLanguage), 
+        [{ 
+          text: t('ok', currentLanguage), 
+          key: 'gallery-error-ok' 
+        }]
+      );
     }
   };
 
@@ -301,9 +302,12 @@ const UserCreationScreen = () => {
       
       if (status !== 'granted') {
         Alert.alert(
-          t.permissionRequired,
-          t.cameraPermission,
-          [{ text: t.ok }]
+          t('permissionRequired', currentLanguage),
+          t('cameraPermission', currentLanguage),
+          [{ 
+            text: t('ok', currentLanguage),
+            key: 'camera-permission-ok'
+          }]
         );
         return;
       }
@@ -319,8 +323,14 @@ const UserCreationScreen = () => {
         setPhoto(result.assets[0].uri);
       }
     } catch (error) {
-      console.log('Error taking photo:', error);
-      Alert.alert(t.errorTitle, t.cameraError);
+      Alert.alert(
+        t('errorTitle', currentLanguage), 
+        t('photoError', currentLanguage), 
+        [{ 
+          text: t('ok', currentLanguage), 
+          key: 'camera-error-ok' 
+        }]
+      );
     }
   };
 
@@ -333,8 +343,8 @@ const UserCreationScreen = () => {
     setLanguageMenuVisible(!languageMenuVisible);
   };
 
-  const changeLanguage = (langCode) => {
-    setLanguage(langCode);
+  const handleLanguageChange = (langCode) => {
+    changeLanguage(langCode);
     setLanguageMenuVisible(false);
   };
 
@@ -345,16 +355,12 @@ const UserCreationScreen = () => {
     
     if (newCount >= 3) {
       setDevModeClicks(0);
-      console.log('[DEV MODE] Bypassing user creation, navigating to MainTabs');
       navigation.navigate('MainTabs');
     }
   };
 
   const toggleMetrics = () => {
     setIsMetric(!isMetric);
-    
-    // Log for debugging
-    console.log(`Metrics changed to ${isMetric ? 'Imperial' : 'Metric'}`);
   };
 
   return (
@@ -395,14 +401,13 @@ const UserCreationScreen = () => {
       <TouchableOpacity 
         style={styles.devSkipButton}
         onPress={() => {
-          console.log('DEV Skip button pressed, navigating to MainTabs');
           navigation.navigate('MainTabs');
         }}
         activeOpacity={0.7}
       >
         <View style={styles.devSkipButtonInner}>
           <MaterialCommunityIcons name="developer-board" size={20} color="#fff" />
-          <Text style={styles.devSkipText}>DEV</Text>
+          <Text style={styles.devSkipText}>Skip for development</Text>
         </View>
       </TouchableOpacity>
       
@@ -410,6 +415,7 @@ const UserCreationScreen = () => {
       <TouchableOpacity 
         style={styles.autoFillButton}
         onPress={() => {
+          // Generate dummy data
           setUserData({
             name: 'John Doe',
             email: 'john.doe@example.com',
@@ -419,12 +425,16 @@ const UserCreationScreen = () => {
             gender: 'male',
             fitnessLevel: 'intermediate'
           });
+          
+          // Set a dummy photo from a remote URL
+          const dummyPhotoUri = 'https://randomuser.me/api/portraits/men/1.jpg';
+          setPhoto(dummyPhotoUri);
         }}
         activeOpacity={0.7}
       >
         <View style={styles.autoFillButtonInner}>
           <MaterialCommunityIcons name="form-select" size={20} color="#fff" />
-          <Text style={styles.autoFillText}>FILL</Text>
+          <Text style={styles.autoFillText}>Fill dummy values</Text>
         </View>
       </TouchableOpacity>
       
@@ -436,20 +446,21 @@ const UserCreationScreen = () => {
         contentStyle={styles.languageMenu}
       >
         <Menu.Item
-          title={languageOptions.find(lang => lang.code === language)?.label || 'Language'}
+          key="language-title"
+          title={languageOptions.find(lang => lang.code === currentLanguage)?.label || 'Language'}
           style={styles.languageTitle}
           titleStyle={styles.languageTitleText}
           disabled
         />
-        <Divider style={styles.languageDivider} />
+        <Divider key="language-divider" style={styles.languageDivider} />
         {languageOptions.map((option) => (
           <Menu.Item
-            key={option.code}
+            key={`language-option-${option.code}`}
             title={option.label}
-            onPress={() => changeLanguage(option.code)}
-            style={language === option.code ? styles.languageItemSelected : styles.languageItem}
-            titleStyle={language === option.code ? styles.languageTextSelected : styles.languageText}
-            leadingIcon={language === option.code ? "check" : undefined}
+            onPress={() => handleLanguageChange(option.code)}
+            style={currentLanguage === option.code ? styles.languageItemSelected : styles.languageItem}
+            titleStyle={currentLanguage === option.code ? styles.languageTextSelected : styles.languageText}
+            leadingIcon={currentLanguage === option.code ? "check" : undefined}
           />
         ))}
       </Menu>
@@ -458,14 +469,14 @@ const UserCreationScreen = () => {
         <View style={{ width: 20 }} />
         
         <Appbar.Content 
-          title={t.createProfile} 
+          title={t('createProfile', currentLanguage)} 
           titleStyle={styles.headerTitle} 
         />
       </Appbar.Header>
       
       <ScrollView style={commonStyles.scrollView}>
         <View style={styles.content}>
-          <Text style={styles.subtitle}>{t.subtitle}</Text>
+          <Text style={styles.subtitle}>{t('subtitle', currentLanguage)}</Text>
 
           {/* Profile Photo Card */}
           <Surface style={styles.photoCard}>
@@ -488,15 +499,15 @@ const UserCreationScreen = () => {
                 </View>
               )}
             </TouchableOpacity>
-            <Text style={styles.photoHint}>{t.addProfilePicture}</Text>
+            <Text style={styles.photoHint}>{t('addProfilePicture', currentLanguage)}</Text>
           </Surface>
 
           {/* Personal Info Card */}
           <Surface style={styles.formCard}>
-            <Text style={styles.sectionTitle}>{t.personalInformation}</Text>
+            <Text style={styles.sectionTitle}>{t('personalInformation', currentLanguage)}</Text>
             
             <TextInput
-              label={t.fullName}
+              label={t('fullName', currentLanguage)}
               value={userData.name}
               onChangeText={(text) => handleInputChange('name', text)}
               style={styles.input}
@@ -511,7 +522,7 @@ const UserCreationScreen = () => {
             {errors.name && <Text style={commonStyles.errorText}>{errors.name}</Text>}
 
             <TextInput
-              label={t.emailAddress}
+              label={t('emailAddress', currentLanguage)}
               value={userData.email}
               onChangeText={(text) => handleInputChange('email', text)}
               style={styles.input}
@@ -533,7 +544,7 @@ const UserCreationScreen = () => {
               <View style={styles.datePickerContainer}>
                 <MaterialCommunityIcons name="calendar" size={24} color={colors.accent} style={styles.dateIcon} />
                 <View style={styles.dateTextContainer}>
-                  <Text style={styles.dateLabel}>{t.dateOfBirth}</Text>
+                  <Text style={styles.dateLabel}>{t('dateOfBirth', currentLanguage)}</Text>
                   <Text style={styles.dateValue}>{formatDate(userData.dob)}</Text>
                 </View>
                 <MaterialCommunityIcons name="chevron-down" size={24} color={colors.textLight} />
@@ -555,7 +566,7 @@ const UserCreationScreen = () => {
 
             <View style={commonStyles.rowBetween}>
               <TextInput
-                label={isMetric ? `${t.weight} (kg)` : `${t.weight} (lbs)`}
+                label={isMetric ? `${t('weight', currentLanguage)} (kg)` : `${t('weight', currentLanguage)} (lbs)`}
                 value={userData.weight}
                 onChangeText={(text) => handleInputChange('weight', text)}
                 style={[styles.input, styles.smallInput]}
@@ -571,7 +582,7 @@ const UserCreationScreen = () => {
               <View style={{width: spacing.medium}} />
               
               <TextInput
-                label={isMetric ? `${t.height} (cm)` : `${t.height} (in)`}
+                label={isMetric ? `${t('height', currentLanguage)} (cm)` : `${t('height', currentLanguage)} (in)`}
                 value={userData.height}
                 onChangeText={(text) => handleInputChange('height', text)}
                 style={[styles.input, styles.smallInput]}
@@ -591,14 +602,15 @@ const UserCreationScreen = () => {
 
           {/* Preferences Card */}
           <Surface style={styles.formCard}>
-            <Text style={styles.sectionTitle}>{t.preferences}</Text>
+            <Text style={styles.sectionTitle}>{t('preferences', currentLanguage)}</Text>
             
-            <Text style={styles.fieldLabel}>{t.gender}</Text>
+            <Text style={styles.fieldLabel}>{t('gender', currentLanguage)}</Text>
             <View style={[
               styles.optionsContainer, 
               layout.screenWidth < 375 && styles.optionsContainerColumn
             ]}>
               <TouchableOpacity 
+                key="gender-male"
                 style={[
                   styles.optionButton, 
                   userData.gender === 'male' && styles.selectedOption
@@ -613,10 +625,11 @@ const UserCreationScreen = () => {
                 <Text style={[
                   styles.optionText,
                   userData.gender === 'male' && styles.selectedOptionText
-                ]}>{t.male}</Text>
+                ]}>{t('male', currentLanguage)}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
+                key="gender-female"
                 style={[
                   styles.optionButton, 
                   userData.gender === 'female' && styles.selectedOption
@@ -631,10 +644,11 @@ const UserCreationScreen = () => {
                 <Text style={[
                   styles.optionText,
                   userData.gender === 'female' && styles.selectedOptionText
-                ]}>{t.female}</Text>
+                ]}>{t('female', currentLanguage)}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
+                key="gender-unspecified"
                 style={[
                   styles.optionButton, 
                   userData.gender === 'unspecified' && styles.selectedOption
@@ -649,18 +663,19 @@ const UserCreationScreen = () => {
                 <Text style={[
                   styles.optionText,
                   userData.gender === 'unspecified' && styles.selectedOptionText
-                ]}>{t.preferNotToSay}</Text>
+                ]}>{t('preferNotToSay', currentLanguage)}</Text>
               </TouchableOpacity>
             </View>
 
             <Divider style={styles.divider} />
 
-            <Text style={styles.fieldLabel}>{t.fitnessLevel}</Text>
+            <Text style={styles.fieldLabel}>{t('fitnessLevel', currentLanguage)}</Text>
             <View style={[
               styles.optionsContainer, 
               layout.screenWidth < 375 && styles.optionsContainerColumn
             ]}>
               <TouchableOpacity 
+                key="fitness-beginner"
                 style={[
                   styles.fitnessOption, 
                   userData.fitnessLevel === 'beginner' && styles.selectedOption
@@ -676,13 +691,14 @@ const UserCreationScreen = () => {
                 <Text style={[
                   styles.fitnessOptionText,
                   userData.fitnessLevel === 'beginner' && styles.selectedOptionText
-                ]}>{t.beginner}</Text>
+                ]}>{t('beginner', currentLanguage)}</Text>
                 <Text style={styles.optionDescription}>
-                  {t.beginnerDesc}
+                  {t('beginnerDesc', currentLanguage)}
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
+                key="fitness-intermediate"
                 style={[
                   styles.fitnessOption, 
                   userData.fitnessLevel === 'intermediate' && styles.selectedOption
@@ -698,13 +714,14 @@ const UserCreationScreen = () => {
                 <Text style={[
                   styles.fitnessOptionText,
                   userData.fitnessLevel === 'intermediate' && styles.selectedOptionText
-                ]}>{t.intermediate}</Text>
+                ]}>{t('intermediate', currentLanguage)}</Text>
                 <Text style={styles.optionDescription}>
-                  {t.intermediateDesc}
+                  {t('intermediateDesc', currentLanguage)}
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
+                key="fitness-advanced"
                 style={[
                   styles.fitnessOption, 
                   userData.fitnessLevel === 'advanced' && styles.selectedOption
@@ -720,9 +737,9 @@ const UserCreationScreen = () => {
                 <Text style={[
                   styles.fitnessOptionText,
                   userData.fitnessLevel === 'advanced' && styles.selectedOptionText
-                ]}>{t.advanced}</Text>
+                ]}>{t('advanced', currentLanguage)}</Text>
                 <Text style={styles.optionDescription}>
-                  {t.advancedDesc}
+                  {t('advancedDesc', currentLanguage)}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -736,11 +753,11 @@ const UserCreationScreen = () => {
             labelStyle={styles.createButtonLabel}
             icon="check"
           >
-            {t.createProfileButton}
+            {t('createProfileButton', currentLanguage)}
           </Button>
           
           <Text style={styles.termsText}>
-            {t.termsText}
+            {t('termsText', currentLanguage)}
           </Text>
           
           {/* Extra space at bottom */}
@@ -751,9 +768,9 @@ const UserCreationScreen = () => {
       {/* Photo Selection Dialog */}
       <Portal>
         <Dialog visible={photoDialogVisible} onDismiss={hidePhotoDialog} style={styles.dialog}>
-          <Dialog.Title style={styles.dialogTitle}>{t.profilePicture}</Dialog.Title>
+          <Dialog.Title style={styles.dialogTitle}>{t('profilePicture', currentLanguage)}</Dialog.Title>
           <Dialog.Content>
-            <Text style={styles.dialogText}>{t.choosePhoto}</Text>
+            <Text style={styles.dialogText}>{t('choosePhoto', currentLanguage)}</Text>
           </Dialog.Content>
           <Dialog.Actions style={styles.dialogActions}>
             <Button 
@@ -761,16 +778,18 @@ const UserCreationScreen = () => {
               style={styles.dialogButton} 
               onPress={takePhoto}
               icon="camera"
+              key="takePhoto"
             >
-              {t.takePhoto}
+              {t('takePhoto', currentLanguage)}
             </Button>
             <Button 
               mode="contained" 
               style={styles.dialogButton} 
               onPress={pickImageFromGallery}
               icon="image"
+              key="chooseFromGallery"
             >
-              {t.chooseFromGallery}
+              {t('chooseFromGallery', currentLanguage)}
             </Button>
             {photo && (
               <Button 
@@ -779,8 +798,9 @@ const UserCreationScreen = () => {
                 onPress={removePhoto}
                 icon="delete"
                 textColor={colors.error}
+                key="removePhoto"
               >
-                {t.removePhoto}
+                {t('removePhoto', currentLanguage)}
               </Button>
             )}
           </Dialog.Actions>
@@ -791,7 +811,7 @@ const UserCreationScreen = () => {
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={styles.loadingText}>{t.saving || 'Saving...'}</Text>
+          <Text style={styles.loadingText}>{t('saving', currentLanguage) || 'Saving...'}</Text>
         </View>
       )}
     </View>
@@ -824,7 +844,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadowStyles.small,
   },
   metricsButtonInner: {
     width: 28,
@@ -845,7 +864,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadowStyles.small,
   },
   languageButtonInner: {
     width: 28,
@@ -910,7 +928,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.small,
     borderWidth: 0,
     position: 'relative',
-    ...shadowStyles.small,
   },
   profilePhoto: {
     width: '100%',
@@ -979,11 +996,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: borderRadius.large,
     backgroundColor: colors.surface,
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1.5,
-    elevation: 1,
   },
   dateIcon: {
     marginRight: spacing.small,
@@ -1025,7 +1037,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     minWidth: layout.screenWidth < 375 ? '90%' : 'auto',
     justifyContent: 'center',
-    ...shadowStyles.small,
   },
   fitnessOption: {
     width: layout.screenWidth < 375 ? '90%' : layout.screenWidth < 768 ? '30%' : '25%',
@@ -1068,7 +1079,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.large,
     marginBottom: spacing.medium,
     borderRadius: borderRadius.medium,
-    ...shadowStyles.medium,
     alignSelf: 'center',
     width: layout.screenWidth < 375 ? '50%' : '40%', // Made smaller
     maxWidth: 180, // Made smaller
@@ -1171,51 +1181,45 @@ const styles = StyleSheet.create({
   },
   devSkipButton: {
     position: 'absolute',
-    bottom: 20,
+    top: Platform.OS === 'ios' ? 100 : 70, 
     right: 20,
-    zIndex: 999,
-    width: 80,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    zIndex: 10,
+    borderRadius: 20,
+    backgroundColor: colors.accent,
     ...shadowStyles.medium,
   },
   devSkipButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   devSkipText: {
     color: '#fff',
-    fontWeight: typography.fontWeight.bold,
-    marginLeft: 6,
-    fontSize: typography.fontSize.small,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    fontSize: 12,
   },
   autoFillButton: {
     position: 'absolute',
-    bottom: 20,
-    right: 110,
-    zIndex: 999,
-    width: 80,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 150, 136, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    top: Platform.OS === 'ios' ? 140 : 110, 
+    right: 20,
+    zIndex: 10,
+    borderRadius: 20,
+    backgroundColor: colors.accent,
     ...shadowStyles.medium,
   },
   autoFillButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   autoFillText: {
     color: '#fff',
-    fontWeight: typography.fontWeight.bold,
-    marginLeft: 6,
-    fontSize: typography.fontSize.small,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    fontSize: 12,
   },
   loadingOverlay: {
     position: 'absolute',

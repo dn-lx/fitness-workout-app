@@ -1,158 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
+import { ActivityIndicator, View } from 'react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Text, ActivityIndicator } from 'react-native';
-
-// Import custom hook for initial route
-import { useInitialRoute } from '../hooks/useInitialRoute';
-import { useUser } from '../contexts/UserContext';
+import { useTheme as usePaperTheme } from 'react-native-paper';
+import { useContext } from 'react';
+import { createAppTheme } from '../styles/AppTheme';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 // Import screens
 import UserCreationScreen from '../screens/UserCreationScreen';
-import WorkoutsScreen from '../screens/WorkoutsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import WorkoutsScreen from '../screens/WorkoutsScreen';
+import ActiveWorkoutScreen from '../screens/ActiveWorkoutScreen';
+import AddWorkoutScreen from '../screens/AddWorkoutScreen';
+import EditWorkoutScreen from '../screens/EditWorkoutScreen';
 
-// Import styles
-import { navigationStyles, tabBarOptions, stackScreenOptions, colors } from '../styles';
+// Import user context
+import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { UserContext } from '../contexts/UserContext';
 
 // Create navigators
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Create a fallback screen in case components fail to load
-const FallbackScreen = ({ route }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-    <Text style={{ fontSize: 18, marginBottom: 20 }}>Screen not available</Text>
-    <Text>Could not load: {route?.name}</Text>
-  </View>
-);
-
-// Loading screen for initial route determination
-const LoadingScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <ActivityIndicator size="large" color={colors.primary} />
-    <Text style={{ marginTop: 20, fontSize: 16, color: colors.textLight }}>
-      Loading...
-    </Text>
-  </View>
-);
-
-// Main tab navigator (for the main app screens)
-const MainTabNavigator = () => {
-  // Access user context to check loading state
-  const { loading } = useUser();
-  
-  // If user data is still loading, show a simple loading indicator
-  // but limit the loading time to prevent infinite loops
-  const [localLoading, setLocalLoading] = useState(loading);
-  
-  // Set a timeout to stop loading after 5 seconds max
-  useEffect(() => {
-    if (loading) {
-      console.log('MainTabs: User data is loading...');
-      // Set a timeout to forcibly stop loading after 5 seconds
-      const timer = setTimeout(() => {
-        console.log('MainTabs: Forcing loading to end after timeout');
-        setLocalLoading(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setLocalLoading(false);
-    }
-  }, [loading]);
-  
-  // Don't show a loading screen, just render the tabs
-  // This prevents blocking UI even if data is still loading
+// Tab navigator (main app screens)
+function MainNavigator() {
+  const { isDarkMode } = useTheme();
+  const theme = isDarkMode ? 'dark' : 'light';
+  const Scheme = createAppTheme(theme);
   
   return (
     <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
-        tabBarStyle: navigationStyles.tabBar,
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+
+          if (route.name === 'Workouts') {
+            iconName = 'dumbbell';
+          } else if (route.name === 'Settings') {
+            iconName = 'cog';
+          }
+
+          return <FontAwesome5 name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: Scheme.color.primary,
+        tabBarInactiveTintColor: Scheme.color.text,
+        tabBarStyle: { 
+          backgroundColor: Scheme.color.background,
+          borderTopColor: Scheme.color.border,
+        },
         headerShown: false,
-      }}
-      initialRouteName="Workouts"
+        tabBarShowLabel: false,
+      })}
     >
-      <Tab.Screen
-        name="Workouts"
-        component={WorkoutsScreen || FallbackScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons 
-              name="dumbbell" 
-              color={color} 
-              size={size} 
-              style={navigationStyles.tabBarIcon}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen || FallbackScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons 
-              name="cog" 
-              color={color} 
-              size={size} 
-              style={navigationStyles.tabBarIcon}
-            />
-          ),
-        }}
-      />
+      <Tab.Screen name="Workouts" component={WorkoutsStackNavigator} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
-};
+}
 
-// Custom Stack navigator options to ensure scrolling works
-const customStackScreenOptions = {
-  ...stackScreenOptions,
-  cardStyle: { 
-    backgroundColor: colors.background,
-  },
-  contentStyle: {
-    flex: 1,
-  },
-  animationEnabled: true,
-  headerMode: 'float',
-};
+function WorkoutsStackNavigator() {
+  return (
+    <Stack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="WorkoutsList" component={WorkoutsScreen} />
+      <Stack.Screen name="AddWorkout" component={AddWorkoutScreen} />
+      <Stack.Screen name="EditWorkout" component={EditWorkoutScreen} />
+      <Stack.Screen name="ActiveWorkout" component={ActiveWorkoutScreen} />
+    </Stack.Navigator>
+  );
+}
 
-// Main app navigator
-const AppNavigator = () => {
-  // Use custom hook to determine initial route based on existing users
-  const { initialRoute, isLoading } = useInitialRoute();
-  
-  // Show loading screen while checking for existing users
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-  
-  console.log('Initial route determined:', initialRoute);
+// Main navigator
+const AppNavigator = ({ initialRouteName = 'UserCreation' }) => {
+  const paperTheme = usePaperTheme();
   
   return (
-    <Stack.Navigator
-      initialRouteName={initialRoute}
-      screenOptions={customStackScreenOptions}
+    <Stack.Navigator 
+      initialRouteName={initialRouteName}
+      screenOptions={{ 
+        headerShown: false,
+        animation: 'slide_from_right',
+        headerStyle: {
+          backgroundColor: paperTheme.colors.surface,
+        },
+        headerTintColor: paperTheme.colors.onSurface,
+        contentStyle: {
+          backgroundColor: paperTheme.colors.background
+        }
+      }}
     >
+      <Stack.Screen name="UserCreation" component={UserCreationScreen} />
+      <Stack.Screen name="MainTabs" component={MainNavigator} />
       <Stack.Screen 
-        name="UserCreation" 
-        component={UserCreationScreen} 
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen 
-        name="MainTabs" 
-        component={MainTabNavigator} 
+        name="ActiveWorkout" 
+        component={ActiveWorkoutScreen}
         options={{ 
-          gestureEnabled: false,
-          headerShown: false,
-          animationEnabled: true,
-        }} 
+          headerShown: true, 
+          title: 'Active Workout',
+          headerStyle: {
+            backgroundColor: paperTheme.colors.surface,
+          },
+          headerTintColor: paperTheme.colors.onSurface,
+        }}
       />
     </Stack.Navigator>
   );

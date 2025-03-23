@@ -1,7 +1,7 @@
 // Russian translations
 export default {
   // Header
-  createProfile: "Создать Профиль",
+  createProfile: "Создайте Свой Профиль",
   
   // Language selector
   language: "Язык",
@@ -19,7 +19,7 @@ export default {
   // Form fields
   personalInformation: "Личная Информация",
   fullName: "Полное Имя",
-  emailAddress: "Адрес Электронной Почты",
+  emailAddress: "Электронная Почта",
   age: "Возраст",
   dateOfBirth: "Дата Рождения",
   weight: "Вес (кг)",
@@ -27,12 +27,12 @@ export default {
   
   // Form validation
   nameRequired: "Имя обязательно",
-  emailRequired: "Email обязателен",
-  validEmail: "Пожалуйста, введите действительный email",
+  emailRequired: "Электронная почта обязательна",
+  validEmail: "Пожалуйста, введите действительный адрес электронной почты",
   weightRequired: "Вес обязателен",
-  validWeight: "Пожалуйста, введите действительный вес",
+  validWeight: "Пожалуйста, введите правильный вес",
   heightRequired: "Рост обязателен",
-  validHeight: "Пожалуйста, введите действительный рост",
+  validHeight: "Пожалуйста, введите правильный рост",
   dobRequired: "Дата рождения обязательна",
   
   // Preferences
@@ -47,7 +47,7 @@ export default {
   beginner: "Начинающий",
   beginnerDesc: "Новичок в фитнесе",
   intermediate: "Средний",
-  intermediateDesc: "Некоторый опыт",
+  intermediateDesc: "Небольшой опыт",
   advanced: "Продвинутый",
   advancedDesc: "Опытный атлет",
   
@@ -71,5 +71,29 @@ export default {
   // Errors
   errorTitle: "Ошибка",
   photoError: "Не удалось выбрать изображение. Пожалуйста, попробуйте снова.",
-  cameraError: "Не удалось сделать фото. Пожалуйста, попробуйте снова."
+  cameraError: "Не удалось сделать фото. Пожалуйста, попробуйте снова.",
+  
+  // Notifications
+  notifications: "Уведомления",
+  notificationsDesc: "Получайте напоминания о тренировках и обновления",
+  notificationSettings: "Настройки Уведомлений",
+  notificationSettingsDesc: "Настройте свои предпочтения уведомлений",
+  workoutReminders: "Напоминания о Тренировках",
+  workoutRemindersDesc: "Ежедневные напоминания для выполнения ваших тренировок",
+  reminderTime: "Время Напоминания",
+  scheduledFor: "Запланировано на",
+  announcements: "Объявления",
+  announcementsDesc: "Будьте в курсе новостей и функций приложения",
+  sendTestNotification: "Отправить Тестовое Уведомление",
+  testNotificationTitle: "Тестовое Уведомление",
+  testNotificationBody: "Это тестовое уведомление от приложения Fitness Workout.",
+  notificationPermissionTitle: "Разрешение на Уведомления",
+  notificationPermissionDesc: "Нам нужно разрешение для отправки вам уведомлений.",
+  setReminderTime: "Установить Время Напоминания",
+  cancel: "Отмена",
+  save: "Сохранить",
+  
+  // Notification messages
+  workoutReminderTitle: "Пора тренироваться!",
+  workoutReminderBody: "Не забудьте о своей фитнес-программе на сегодня."
 }; 

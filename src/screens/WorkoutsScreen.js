@@ -1,137 +1,237 @@
-import React, { useState } from 'react';
-import { View, FlatList, Alert } from 'react-native';
-import { Text, Searchbar, FAB, Portal, Dialog, Button } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, FlatList, Alert, ScrollView } from 'react-native';
+import { Text, Searchbar, FAB, Portal, Dialog, Button, Appbar, ActivityIndicator, Chip, useTheme as usePaperTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
 
 // Import components
-import WorkoutCard from '../components/workout/WorkoutCard';
+import WorkoutCard from '../components/WorkoutCard';
 
 // Import user context
 import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage, t } from '../contexts/LanguageContext';
 
 // Import models
-import { workouts as workoutsData } from '../models/workout';
+import { workouts as workoutsData, removeWorkout } from '../models/workout';
 
 // Import styles
-import { workoutsStyles as styles, colors } from '../styles';
+import { colors, spacing, typography, shadowStyles } from '../styles/common';
+import workoutsScreenStyles from '../styles/workoutsScreenStyles';
+import ShowToast from '../components/Toast';
 
-const WorkoutsScreen = () => {
+const WorkoutsScreen = ({ navigation }) => {
+  const route = useRoute();
+  const { isDarkMode } = useTheme();
+  const paperTheme = usePaperTheme();
+  const { currentLanguage } = useLanguage();
+  
   const [workouts, setWorkouts] = useState(workoutsData);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
-  const { deleteAllLocalUsers } = useUser();
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ visible: false, message: '' });
+  
+  // Selected filters
+  const [selectedFilters, setSelectedFilters] = useState([]);
+
+  // Filter categories
+  const filterCategories = [
+    { id: 'beginner', label: t('beginner', currentLanguage) },
+    { id: 'intermediate', label: t('intermediate', currentLanguage) },
+    { id: 'advanced', label: t('advanced', currentLanguage) },
+    { id: 'short', label: '< 30 min' },
+    { id: 'medium', label: '30-45 min' },
+    { id: 'long', label: '> 45 min' }
+  ];
+
+  // Check for messages from other screens
+  useEffect(() => {
+    if (route.params?.message) {
+      setToast({ visible: true, message: route.params.message });
+      // Clear the message
+      navigation.setParams({ message: null });
+    }
+  }, [route.params?.message]);
 
   const handleSearch = (query) => {
     setSearchQuery(query);
+    applyFilters(query, selectedFilters);
+  };
+  
+  const toggleFilter = (filterId) => {
+    const updatedFilters = selectedFilters.includes(filterId)
+      ? selectedFilters.filter(id => id !== filterId)
+      : [...selectedFilters, filterId];
     
-    if (!query.trim()) {
-      setWorkouts(workoutsData);
-      return;
+    setSelectedFilters(updatedFilters);
+    applyFilters(searchQuery, updatedFilters);
+  };
+  
+  const applyFilters = (query, filters) => {
+    let filteredWorkouts = [...workoutsData];
+    
+    // Apply text search if query exists
+    if (query.trim()) {
+      filteredWorkouts = filteredWorkouts.filter(workout => 
+        workout.title.toLowerCase().includes(query.toLowerCase()) || 
+        workout.description.toLowerCase().includes(query.toLowerCase()) ||
+        workout.level.toLowerCase().includes(query.toLowerCase())
+      );
     }
     
-    const filteredWorkouts = workoutsData.filter(workout => 
-      workout.title.toLowerCase().includes(query.toLowerCase()) || 
-      workout.description.toLowerCase().includes(query.toLowerCase()) ||
-      workout.level.toLowerCase().includes(query.toLowerCase())
-    );
+    // Apply selected filters
+    if (filters.length > 0) {
+      // Group filters by type
+      const difficultyFilters = filters.filter(f => ['beginner', 'intermediate', 'advanced'].includes(f));
+      const durationFilters = filters.filter(f => ['short', 'medium', 'long'].includes(f));
+      
+      filteredWorkouts = filteredWorkouts.filter(workout => {
+        // If no filters of a specific type, don't filter by that type
+        const matchesDifficulty = difficultyFilters.length === 0 || difficultyFilters.includes(workout.level);
+        
+        let matchesDuration = true;
+        if (durationFilters.length > 0) {
+          matchesDuration = false;
+          if (durationFilters.includes('short') && workout.duration < 30) {
+            matchesDuration = true;
+          } else if (durationFilters.includes('medium') && workout.duration >= 30 && workout.duration <= 45) {
+            matchesDuration = true;
+          } else if (durationFilters.includes('long') && workout.duration > 45) {
+            matchesDuration = true;
+          }
+        }
+        
+        return matchesDifficulty && matchesDuration;
+      });
+    }
     
     setWorkouts(filteredWorkouts);
   };
 
-  const handleSelectWorkout = (id) => {
-    setSelectedWorkout(id);
-    console.log('Selected workout:', id);
+  const handleRemoveWorkout = (id) => {
+    // Remove workout from the data
+    removeWorkout(id);
+    
+    // Update local state
+    setWorkouts(workouts.filter(workout => workout.id !== id));
+    
+    // Show success message
+    setToast({ visible: true, message: t('workoutRemoved', currentLanguage) });
   };
 
-  const handleStartWorkout = (id) => {
-    console.log('Starting workout:', id);
-    // Navigate to workout details/start screen
-  };
-
-  const handleDeleteLocalUsers = async () => {
-    try {
-      const result = await deleteAllLocalUsers();
-      if (result.success) {
-        Alert.alert(
-          'Success',
-          `Local users deleted successfully. ${result.message}`,
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert(
-          'Error',
-          `Failed to delete local users: ${result.error || 'Unknown error'}`,
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        `An unexpected error occurred: ${error.message}`,
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setConfirmDialogVisible(false);
-    }
+  const handleAddWorkout = () => {
+    navigation.navigate('AddWorkout');
   };
 
   const renderWorkoutCard = ({ item }) => (
     <WorkoutCard 
       workout={item}
-      onSelect={handleSelectWorkout}
-      onStart={handleStartWorkout}
+      onRemove={handleRemoveWorkout}
     />
   );
 
+  // Load workouts on component mount
+  useEffect(() => {
+    // Simulate API call or data loading
+    const loadWorkouts = () => {
+      setTimeout(() => {
+        setWorkouts(workoutsData);
+        setLoading(false);
+      }, 1000);
+    };
+
+    loadWorkouts();
+  }, []);
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Workouts</Text>
-        <Searchbar
-          placeholder="Search workouts"
-          onChangeText={handleSearch}
-          value={searchQuery}
-          style={styles.searchBar}
+    <SafeAreaView style={workoutsScreenStyles.container} edges={['top']}>
+      <Appbar.Header style={workoutsScreenStyles.headerContainer}>
+        <Appbar.Content 
+          title={t('workouts', currentLanguage)} 
+          titleStyle={workoutsScreenStyles.headerTitle} 
+          style={workoutsScreenStyles.headerContent} 
         />
+      </Appbar.Header>
+      
+      <View style={workoutsScreenStyles.searchAndFilterContainer}>
+        <View style={workoutsScreenStyles.searchContainer}>
+          <Searchbar
+            placeholder={t('searchForWorkout', currentLanguage) || "Search for Workout"}
+            onChangeText={handleSearch}
+            value={searchQuery}
+            style={workoutsScreenStyles.searchBar}
+            iconColor={colors.accent}
+            inputStyle={workoutsScreenStyles.searchInput}
+          />
+        </View>
+        
+        <View style={workoutsScreenStyles.filterContainer}>
+          {filterCategories.map((category) => (
+            <Chip
+              key={category.id}
+              selected={selectedFilters.includes(category.id)}
+              onPress={() => toggleFilter(category.id)}
+              style={[
+                {
+                  backgroundColor: colors.primary, 
+                  borderColor: colors.primary,
+                  margin: 4,
+                  height: 36,
+                  ...shadowStyles.small
+                },
+                selectedFilters.includes(category.id) && {
+                  backgroundColor: colors.primaryDark,
+                  borderColor: colors.primaryDark
+                }
+              ]}
+              textStyle={{
+                color: '#FFFFFF',
+                fontSize: typography.fontSize.small,
+                fontWeight: 'bold'
+              }}
+            >
+              {category.label}
+            </Chip>
+          ))}
+        </View>
       </View>
       
-      <FlatList
-        data={workouts}
-        renderItem={renderWorkoutCard}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={true}
-        removeClippedSubviews={true}
-        initialNumToRender={5}
-      />
-      
-      {workouts.length === 0 && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No workouts found</Text>
+      {loading ? (
+        <View style={workoutsScreenStyles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
+      ) : (
+        <>
+          <FlatList
+            contentContainerStyle={workoutsScreenStyles.listContainer}
+            data={workouts}
+            renderItem={renderWorkoutCard}
+            keyExtractor={(item) => item.id.toString()}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={workoutsScreenStyles.emptyContainer}>
+                <Text style={workoutsScreenStyles.emptyText}>
+                  {t('noWorkoutsFound', currentLanguage) || 'No workouts found'}
+                </Text>
+              </View>
+            }
+          />
+          
+          <FAB 
+            style={workoutsScreenStyles.fab}
+            icon="plus"
+            onPress={handleAddWorkout}
+            color={isDarkMode ? colors.black : colors.white}
+          />
+        </>
       )}
-
-      <FAB
-        style={styles.devButton}
-        small
-        icon="database-remove"
-        color="#fff"
-        onPress={() => setConfirmDialogVisible(true)}
+      
+      <ShowToast
+        visible={toast.visible}
+        message={toast.message}
+        onDismiss={() => setToast({ ...toast, visible: false })}
       />
-
-      <Portal>
-        <Dialog visible={confirmDialogVisible} onDismiss={() => setConfirmDialogVisible(false)}>
-          <Dialog.Title>Delete Local Users</Dialog.Title>
-          <Dialog.Content>
-            <Text>Are you sure you want to delete all users from the local database? This action cannot be undone!</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setConfirmDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleDeleteLocalUsers} mode="contained" color={colors.error}>Delete Local Users</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
     </SafeAreaView>
   );
 };

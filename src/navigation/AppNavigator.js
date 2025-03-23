@@ -12,7 +12,6 @@ import { useUser } from '../contexts/UserContext';
 import UserCreationScreen from '../screens/UserCreationScreen';
 import WorkoutsScreen from '../screens/WorkoutsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import StorageTestScreen from '../screens/StorageTestScreen';
 
 // Import styles
 import { navigationStyles, tabBarOptions, stackScreenOptions, colors } from '../styles';
@@ -84,20 +83,6 @@ const MainTabNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons 
               name="dumbbell" 
-              color={color} 
-              size={size} 
-              style={navigationStyles.tabBarIcon}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Storage"
-        component={StorageTestScreen || FallbackScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons 
-              name="database" 
               color={color} 
               size={size} 
               style={navigationStyles.tabBarIcon}

@@ -39,3 +39,11 @@ yarn-error.*
 src/config/secrets.js
 *secrets*
 *credential*
+
+# Firebase logs and caches that might contain sensitive data
+*-debug.log
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firebase-export-*

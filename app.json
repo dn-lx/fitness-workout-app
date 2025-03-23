@@ -2,13 +2,13 @@
   "expo": {
     "name": "Fitness Workouts App",
     "slug": "fitness-workouts-app",
-    "version": "1.0.0",
+    "version": "1.0.7",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/fitness-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/fitness-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,24 +17,27 @@
       "bundleIdentifier": "com.fitnessworkouts.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos so you can select a profile picture.",
-        "NSCameraUsageDescription": "We need access to your camera so you can take a picture for your profile."
-      }
+        "NSCameraUsageDescription": "We need access to your camera so you can take a picture for your profile.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "11"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/fitness-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.fitnessworkouts.app",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 1
+      "versionCode": 12
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/fitness-icon.png"
     },
     "plugins": [
       [
@@ -48,7 +51,14 @@
     "extra": {
       "eas": {
         "projectId": "8f83077a-73e6-4153-b8d1-1714c439c8b3"
-      }
+      },
+      "firebaseApiKey": "AIzaSyDev-config-key-123456789",
+      "firebaseAuthDomain": "fitness-app-dev.firebaseapp.com",
+      "firebaseProjectId": "fitness-app-dev",
+      "firebaseStorageBucket": "fitness-app-dev.appspot.com",
+      "firebaseMessagingSenderId": "1234567890",
+      "firebaseAppId": "1:1234567890:web:abcdefghijklmnop",
+      "firebaseMeasurementId": "G-ABCDEFGHIJ"
     }
   }
 }

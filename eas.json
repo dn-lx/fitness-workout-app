@@ -14,18 +14,24 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "env": {
+        "APP_ENV": "preview"
+      },
+      "prebuildCommand": "npx expo prebuild --clean"
     },
     "simple-apk": {
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
-      }
+      },
+      "prebuildCommand": "npx expo prebuild --platform android --clean"
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
-      }
+      },
+      "prebuildCommand": "npx expo prebuild --clean"
     }
   },
   "submit": {

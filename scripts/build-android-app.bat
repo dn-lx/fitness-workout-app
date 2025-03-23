@@ -75,36 +75,28 @@ echo.
 echo Select build profile:
 echo 1. Preview (development build with debug tools)
 echo 2. Production (optimized build for release)
+echo 3. Simple APK (fastest build)
 echo.
-set /p PROFILE_CHOICE=Enter your choice (1-2): 
+set /p PROFILE_CHOICE=Enter your choice (1-3): 
 
 if "%PROFILE_CHOICE%"=="1" (
     set BUILD_PROFILE=preview
 ) else if "%PROFILE_CHOICE%"=="2" (
     set BUILD_PROFILE=production
+) else if "%PROFILE_CHOICE%"=="3" (
+    set BUILD_PROFILE=simple-apk
 ) else (
-    echo Invalid choice. Using preview profile by default.
-    set BUILD_PROFILE=preview
-)
-
-:: Run prebuild to generate native code
-echo.
-echo Running prebuild to generate Android native files...
-echo This is needed for EAS Build to work properly.
-echo.
-call npx expo prebuild --platform android --clean
-if %ERRORLEVEL% neq 0 (
-    echo Failed to generate Android native files. 
-    echo This is required for EAS Build to work properly.
-    pause
-    exit /b 1
+    echo Invalid choice. Using simple-apk profile by default.
+    set BUILD_PROFILE=simple-apk
 )
 
 echo.
 echo Starting Android build with profile: %BUILD_PROFILE%
 echo.
+echo Note: Prebuild will happen automatically on Expo's build servers.
+echo.
 
-call eas build -p android --profile %BUILD_PROFILE%
+call eas build -p android --profile %BUILD_PROFILE% --no-wait
 
 if %ERRORLEVEL% equ 0 (
     echo.

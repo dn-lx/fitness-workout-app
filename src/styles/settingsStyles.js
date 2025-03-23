@@ -1,29 +1,31 @@
 import { StyleSheet, Dimensions, Platform } from 'react-native';
-import { colors, spacing, typography } from './common';
+import { colors, spacing, typography, borderRadius } from './common';
 
 const { height } = Dimensions.get('window');
 
 const settingsStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   scrollContent: {
+    padding: spacing.medium,
     minHeight: Platform.OS === 'web' ? undefined : height - 60, // Header height
-    paddingBottom: spacing.large,
   },
   buttonContainer: {
-    padding: spacing.medium,
+    marginTop: spacing.large,
     marginBottom: spacing.large,
   },
   button: {
     marginVertical: spacing.small,
   },
   logoutButton: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.accent,
   },
   aboutText: {
-    lineHeight: 22,
+    fontSize: typography.fontSize.medium,
+    lineHeight: typography.lineHeight.large,
+    color: colors.textDark,
   },
   sectionHeader: {
     backgroundColor: '#f5f5f5',
@@ -43,6 +45,29 @@ const settingsStyles = StyleSheet.create({
   },
   radioItem: {
     paddingVertical: spacing.small,
+  },
+  // Update dialog styles
+  updateTitle: {
+    fontSize: typography.fontSize.large,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.medium,
+    color: colors.primary,
+  },
+  updateNotes: {
+    fontSize: typography.fontSize.medium,
+    lineHeight: typography.lineHeight.large,
+    marginBottom: spacing.large,
+  },
+  progressContainer: {
+    marginTop: spacing.medium,
+    alignItems: 'center',
+  },
+  progressText: {
+    fontSize: typography.fontSize.medium,
+    marginBottom: spacing.small,
+  },
+  progressIndicator: {
+    marginTop: spacing.small,
   },
 });
 

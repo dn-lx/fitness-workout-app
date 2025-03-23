@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // For demo purposes only - allow all access
+    // IMPORTANT: This is NOT secure for production use
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Original rules below - commented out for reference
+    /*
+    // User profiles - allow creation without auth for demo app
+    match /users/{userId} {
+      allow read: if true;
+      // Allow creating users without authentication for the demo app
+      allow create: if true;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Workouts - users can create and manage their own workouts
+    match /workouts/{workoutId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Exercise library - public read, admin write
+    match /exercises/{exerciseId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    */
+  }
+} 

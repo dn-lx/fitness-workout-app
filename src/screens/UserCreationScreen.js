@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Alert, Platform, StyleSheet, StatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ScrollView, Image, TouchableOpacity, Alert, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TextInput, Button, Text, Appbar, Portal, Dialog, IconButton, Surface, Avatar, Divider, Menu } from 'react-native-paper';
+import { TextInput, Button, Text, Appbar, Portal, Dialog, IconButton, Surface, Avatar, Divider, Menu, Chip } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useUser } from '../contexts/UserContext';
+import { colors } from '../styles';
+import firebaseService from '../services/firebaseService';
 
 // Import styles
 import commonStyles, { 
-  colors, spacing, typography, shadowStyles, 
+  spacing, typography, shadowStyles, 
   cardStyles, inputStyles, buttonStyles, layout, borderRadius 
 } from '../styles/common';
 
@@ -18,6 +21,7 @@ import { translations, languageOptions, defaultLanguage } from '../languages';
 
 const UserCreationScreen = () => {
   const navigation = useNavigation();
+  const { saveUser } = useUser();
   const [language, setLanguage] = useState(defaultLanguage);
   const [userData, setUserData] = useState({
     name: '',
@@ -35,9 +39,35 @@ const UserCreationScreen = () => {
   const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
   const [devModeClicks, setDevModeClicks] = useState(0);
   const [isMetric, setIsMetric] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [firebaseStatus, setFirebaseStatus] = useState(null);
+  const nameInputRef = useRef(null);
   
   // Get current translations based on selected language
   const t = translations[language];
+  
+  // Test Firebase connection on component mount
+  useEffect(() => {
+    const testFirebaseConnection = async () => {
+      try {
+        const result = await firebaseService.checkFirebaseConnection();
+        setFirebaseStatus(result);
+        if (!result.success) {
+          console.error('Firebase connection test failed:', result.error);
+        } else {
+          console.log('Firebase connection test passed:', result.message);
+        }
+      } catch (error) {
+        console.error('Error testing Firebase connection:', error);
+        setFirebaseStatus({
+          success: false,
+          error: error.message || 'Unknown error testing connection'
+        });
+      }
+    };
+    
+    testFirebaseConnection();
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
@@ -72,25 +102,121 @@ const UserCreationScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (validateForm()) {
-      // Calculate age from date of birth
-      const today = new Date();
-      const birthDate = new Date(userData.dob);
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDifference = today.getMonth() - birthDate.getMonth();
-      if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
+      try {
+        // Show loading state
+        setIsLoading(true);
+        
+        // Check Firebase connection first
+        if (!firebaseStatus || !firebaseStatus.success) {
+          console.log('Testing Firebase connection before proceeding...');
+          const connectionTest = await firebaseService.checkFirebaseConnection();
+          setFirebaseStatus(connectionTest);
+          
+          if (!connectionTest.success) {
+            throw new Error(`Firebase connection error: ${connectionTest.error || 'Unable to connect to Firebase'}`);
+          }
+          console.log('Firebase connection test passed, proceeding with user creation');
+        }
+        
+        // Prepare the user data
+        const completeUserData = {
+          ...userData,
+          photoUri: photo,
+          preferredUnit: isMetric ? 'metric' : 'imperial',
+          preferredLanguage: language
+        };
+        
+        console.log('Creating user with data:', {
+          ...completeUserData,
+          photoUri: photo ? 'photo_provided' : 'no_photo'
+        });
+        
+        // Try direct Firebase service - WAIT for BOTH responses
+        console.log('Attempting Firebase save...');
+        const result = await firebaseService.saveUser(completeUserData);
+        
+        // IMPORTANT: Log details of both responses to verify they were received
+        console.log('Firebase save complete:', result);
+        
+        if (result.user?.saveResults) {
+          console.log('LOCAL save response:', 
+            result.user.saveResults.local?.success ? 'Success' : 'Failed');
+          console.log('CLOUD save response:', 
+            result.user.saveResults.cloud?.success ? 'Success' : 'Failed');
+        }
+        
+        // Hide loading AFTER save completes
+        setIsLoading(false);
+        
+        if (result.success) {
+          console.log('User created and saved successfully:', result.user);
+          
+          // Show success message
+          Alert.alert(
+            t.successTitle || 'Success',
+            t.userCreatedSuccess || 'Your profile has been created successfully!',
+            [{ text: t.ok || 'OK' }],
+            { cancelable: false }
+          );
+          
+          // Force navigation with a small delay to ensure alert is seen
+          console.log('Forcing navigation to MainTabs');
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' }],
+            });
+          }, 500);
+        } else {
+          console.error('Firebase save failed:', result.error);
+          
+          // Show warning message
+          Alert.alert(
+            t.warningTitle || 'Warning',
+            `${t.userPartialSuccess || 'There were some issues saving your profile, but you can continue to the app.'} Error: ${result.error}`,
+            [{ text: t.ok || 'OK' }],
+            { cancelable: false }
+          );
+          
+          // Force navigation with a small delay to ensure alert is seen
+          console.log('Forcing navigation to MainTabs despite error');
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' }],
+            });
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Error creating user:', error);
+        setIsLoading(false);
+        
+        // Show error message
+        Alert.alert(
+          t.errorTitle || 'Error',
+          `${t.unexpectedError || 'An unexpected error occurred'}: ${error.message}`,
+          [{ text: t.ok || 'OK' }],
+          { cancelable: false }
+        );
+        
+        // Force navigation with a small delay to ensure alert is seen
+        console.log('Forcing navigation to MainTabs despite error');
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }],
+          });
+        }, 500);
       }
-      
-      // Include photo and age in user data
-      const completeUserData = {
-        ...userData,
-        age,
-        photoUri: photo
-      };
-      console.log('User created:', completeUserData);
-      navigation.replace('MainTabs');
+    } else {
+      // Form is not valid, show error message
+      Alert.alert(
+        t.errorTitle || 'Error',
+        t.formErrors || 'Please check the form for errors and try again.',
+        [{ text: t.ok || 'OK' }]
+      );
     }
   };
 
@@ -219,13 +345,12 @@ const UserCreationScreen = () => {
     
     if (newCount >= 3) {
       setDevModeClicks(0);
-      navigation.replace('MainTabs');
-      console.log('[DEV MODE] Bypassing user creation');
+      console.log('[DEV MODE] Bypassing user creation, navigating to MainTabs');
+      navigation.navigate('MainTabs');
     }
   };
 
   const toggleMetrics = () => {
-    // Just toggle the metric state without converting values
     setIsMetric(!isMetric);
     
     // Log for debugging
@@ -269,12 +394,37 @@ const UserCreationScreen = () => {
       {/* Developer Skip Button */}
       <TouchableOpacity 
         style={styles.devSkipButton}
-        onPress={() => navigation.replace('MainTabs')}
+        onPress={() => {
+          console.log('DEV Skip button pressed, navigating to MainTabs');
+          navigation.navigate('MainTabs');
+        }}
         activeOpacity={0.7}
       >
         <View style={styles.devSkipButtonInner}>
           <MaterialCommunityIcons name="developer-board" size={20} color="#fff" />
           <Text style={styles.devSkipText}>DEV</Text>
+        </View>
+      </TouchableOpacity>
+      
+      {/* Auto Fill Button */}
+      <TouchableOpacity 
+        style={styles.autoFillButton}
+        onPress={() => {
+          setUserData({
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            weight: isMetric ? '75' : '165',
+            height: isMetric ? '175' : '69',
+            dob: new Date(1990, 0, 1),
+            gender: 'male',
+            fitnessLevel: 'intermediate'
+          });
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.autoFillButtonInner}>
+          <MaterialCommunityIcons name="form-select" size={20} color="#fff" />
+          <Text style={styles.autoFillText}>FILL</Text>
         </View>
       </TouchableOpacity>
       
@@ -356,6 +506,7 @@ const UserCreationScreen = () => {
               theme={{ roundness: 12 }}
               error={!!errors.name}
               left={<TextInput.Icon icon="account" color={colors.accent} />}
+              ref={nameInputRef}
             />
             {errors.name && <Text style={commonStyles.errorText}>{errors.name}</Text>}
 
@@ -635,6 +786,14 @@ const UserCreationScreen = () => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Loading overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={styles.loadingText}>{t.saving || 'Saving...'}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -1033,6 +1192,47 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     marginLeft: 6,
     fontSize: typography.fontSize.small,
+  },
+  autoFillButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 110,
+    zIndex: 999,
+    width: 80,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 150, 136, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadowStyles.medium,
+  },
+  autoFillButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  autoFillText: {
+    color: '#fff',
+    fontWeight: typography.fontWeight.bold,
+    marginLeft: 6,
+    fontSize: typography.fontSize.small,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  loadingText: {
+    color: colors.surface,
+    marginTop: spacing.medium,
+    fontSize: typography.fontSize.medium,
+    fontFamily: typography.fontFamily.medium,
   },
 });
 

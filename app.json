@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "fitness-workouts-app",
+    "name": "Fitness Workouts App",
     "slug": "fitness-workouts-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.fitnessworkouts.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "We need access to your photos so you can select a profile picture.",
         "NSCameraUsageDescription": "We need access to your camera so you can take a picture for your profile."
@@ -24,11 +25,13 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.fitnessworkouts.app",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,6 +44,11 @@
           "cameraPermission": "We need access to your camera so you can take a picture for your profile."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8f83077a-73e6-4153-b8d1-1714c439c8b3"
+      }
+    }
   }
 }

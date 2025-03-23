@@ -64,6 +64,14 @@ const workoutsStyles = StyleSheet.create({
     intermediate: colors.warning,
     advanced: colors.danger,
   },
+  // Dev button for database operations
+  devButton: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.danger,
+  },
 });
 
 export default workoutsStyles; 
